@@ -13,31 +13,8 @@
  *      DEFINES
  *********************/
 
-#define LED_ONTIME  200U /*ms*/
-#define LED_OFFTIME 200U /*ms*/
-#define LED_REPEAT  100U /*ms*/
-
-/**********************
- *  STATIC PROTOTYPES
- **********************/
-
-static void led_set_state(uint8_t state);
-
-/**********************
- *      TYPEDEFS
- **********************/
-
-led_obj_t led1 = {
-    .on_tick = MS_TO_TICKS(
-        LED_ONTIME, LED_REPEAT),
-    .off_tick = MS_TO_TICKS(
-        LED_OFFTIME, LED_REPEAT),
-
-    .last_state = LED_OFF,
-    .state = LED_OFF,
-    .color = GRAY,
-    .led_cb = led_set_state,
-};
+/*LED Maximum time between blinks.*/
+#define LED_MAX 0xFFFFU
 
 /**********************
  * GLOBAL FUNCTIONS
@@ -45,41 +22,61 @@ led_obj_t led1 = {
 
 /**
  * Non-blocking LED state machine driver
- * @param led Pointer to LED control object (must be pre-initialized)
+ * @param led Pointer to LED control 
+ * object (must be pre-initialized)
  */
-void led_light_work(led_obj_t * led)
+void _led_tick_work(led_obj_t * led_p)
 {
-    if (led == NULL) return;
+    if (led_p == NULL) return;
 
-    if (led->state == LED_ON) {
-        led->on_tick--;
-        if (led->on_tick <= 0) {
-            led->state = LED_OFF;
-            led->off_tick = MS_TO_TICKS(
-                LED_OFFTIME, LED_REPEAT);
+    if (led_p->state != LED_ON) {
+        led_p->off_tick--;
+        if (led_p->off_tick <= 0) {
+            led_p->state = LED_ON;
+            led_p->on_tick = MS_TO_TICKS(
+                    led_p->_off_time, 
+                    LED_REPEAT);
         }
     } else {
-        led->off_tick--;
-        if (led->off_tick <= 0) {
-            led->state = LED_ON;
-            led->on_tick = MS_TO_TICKS(
-                LED_ONTIME, LED_REPEAT);
+        led_p->on_tick--;
+        if (led_p->on_tick <= 0) {
+            led_p->state = LED_OFF;
+            led_p->off_tick = MS_TO_TICKS(
+                    led_p->_on_time, 
+                    LED_REPEAT);
         }
     }
 
-    if (led->state != led->last_state) {
-        led->led_cb(led->state);
+    if (led_p->state != led_p->last) {
+        if (led_p->refer != NULL)
+            led_p->refer(led_p);
     }
 
-    led->last_state = led->state;
+    led_p->last = led_p->state;
 }
 
 /**
- * An interface function that controls the hardware status of the LED.
- * @param state Target state (0: LED off, non-0: LED on).
+ * An interface function that controls 
+ * the hardware status of the LED.
+ * @param led Pointer to LED control 
+ * object (must be pre-initialized)
  */
-static void led_set_state(uint8_t state)
+void _led_set_val(led_obj_t * led_p, uint8_t val)
 {
-    if (state) {}
-    else {}
+    if (led_p == NULL) return;
+
+    if (val > 100) val = 100;
+    uint8_t _r_val = 100 - val;
+
+    uint32_t range = LED_MAX - LED_REPEAT;
+    uint16_t _start = LED_REPEAT;
+
+    range *= _r_val;
+    range /= 100;
+
+    uint16_t _target = (uint16_t)(range / 2);
+
+    led_p->_on_time = _start + _target;
+    led_p->_off_time = _on_time;
+    if (val != 0) led_p->state = LED_ON;
 }
