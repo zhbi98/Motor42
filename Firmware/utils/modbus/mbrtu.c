@@ -7,7 +7,7 @@
  *      INCLUDES
  *********************/
 
-#include "xt_usart0.h"
+#include "usart.h"
 #include <assert.h>
 #include "mbrtu.h"
 
@@ -15,8 +15,7 @@
  *      DEFINES
  *********************/
 
-#define MB_SEND_BYTE(buf, len) \
-    xt_usart0_send_data(buf, len)
+#define MB_SEND_BYTE(buf, len) 
 
 /**
  * rs485_receive_disable(); \

@@ -8,8 +8,6 @@
  *********************/
 
 #include "mb.h"
-#include "devdesc.h"
-#include "tran.h"
 #include "log.h"
 
 /*********************
@@ -34,23 +32,23 @@
 
 static uint16_t * const data_p[REG_COUNT] = {
     /*0*/
-    &devdesc.sn[0], &devdesc.sn[1], &devdesc.sn[2], &devdesc.sn[3], &devdesc.sn[4], 
-    &devdesc.sn[5], &devdesc.sn[6], &devdesc.sn[7], 
+    NULL, NULL, NULL, NULL, NULL, 
+    NULL, NULL, NULL, 
 
     /*8*/
-    &devdesc.version[0], &devdesc.version[1], &devdesc.version[2], &devdesc.version[3], 
+    NULL, NULL, NULL, NULL, 
 
-    &devdesc.build[0], &devdesc.build[1], &devdesc.build[2], &devdesc.build[3], 
+    NULL, NULL, NULL, NULL, 
 
     /*16*/
-    &devdesc.date[0], &devdesc.date[1], &devdesc.date[2], &devdesc.date[3], &devdesc.date[4], 
-    &devdesc.date[5], &devdesc.date[6], &devdesc.date[7], 
+    NULL, NULL, NULL, NULL, NULL, 
+    NULL, NULL, NULL, 
 
     /*24*/
-    &devdesc.slaveid, 
+    NULL, 
 
     /*25*/
-    &tran_dir, &_led3, NULL, NULL, NULL, 
+    NULL, NULL, NULL, NULL, NULL, 
     NULL, NULL, NULL, NULL, NULL, 
     NULL, NULL, NULL, NULL, NULL,
 };

@@ -77,6 +77,6 @@ void _led_set_val(led_obj_t * led_p, uint8_t val)
     uint16_t _target = (uint16_t)(range / 2);
 
     led_p->_on_time = _start + _target;
-    led_p->_off_time = _on_time;
+    led_p->_off_time = led_p->_on_time;
     if (val != 0) led_p->state = LED_ON;
 }

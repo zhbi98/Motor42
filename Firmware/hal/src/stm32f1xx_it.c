@@ -22,7 +22,10 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f1xx_it.h"
-   
+#include "usart.h"
+#include "can.h"
+#include "tim.h"
+
 /** @addtogroup STM32F1xx_HAL_Examples
   * @{
   */

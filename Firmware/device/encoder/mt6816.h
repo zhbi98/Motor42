@@ -10,7 +10,6 @@
  *      INCLUDES
  *********************/
 
-#include "mt6816_msp_init.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include "time.h"

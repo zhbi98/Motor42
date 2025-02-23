@@ -103,7 +103,7 @@ void x42_can_init()
  *         the configuration information for the specified GPIO peripheral.
  * @retval None
  */
-void HAL_CAN_MspInit(CAN_HandleTypeDef *hcan)
+void HAL_CAN_MspInit(CAN_HandleTypeDef *canHandle)
 {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
@@ -227,7 +227,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef* hcan)
 
     uint8_t id = (RxHeader.StdId >> 7); // 4Bits ID & 7Bits Msg
     uint8_t cmd = RxHeader.StdId & 0x7F; // 4Bits ID & 7Bits Msg
-    if (id == 0 || id == boardConfig.canNodeId)
+    if (id == 0 || id == 0/*boardConfig.canNodeId*/)
     {
         /*OnCanCmd(cmd, RxData, RxHeader.DLC);*/
     }

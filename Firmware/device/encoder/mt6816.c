@@ -8,6 +8,7 @@
  *********************/
 
 #include "mt6816.h"
+#include "spi.h"
 
 /**********************
  *  STATIC PROTOTYPES

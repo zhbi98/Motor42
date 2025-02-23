@@ -10,7 +10,7 @@
 #include "enc_cali.h"
 #include "tb67h450.h"
 #include "mt6816.h"
-#include "f103cb.h"
+#include "romf103cb.h"
 #include "log.h"
 
 /*********************
@@ -28,7 +28,7 @@
 _cali_ctl_t cali = {
     .state = STATE_IDLE,
     .errid = ERR_NO,
-    .turn_pos = 0,
+    .roto_pos = 0,
     ._start = false,
     .raw_num = 0,
     .avg_cnt = 0,
@@ -154,10 +154,10 @@ static uint32_t _mod(uint32_t _a, uint32_t _b)
 static void _state_idle_execute(_cali_ctl_t * cali_p)
 {
     tb_foc_set_current_vector(
-        cali.turn_pos, DRIVE_CURR);
+        cali.roto_pos, DRIVE_CURR);
 
     cali.state = STATE_FWD_READY;
-    cali.turn_pos = SUBDIV;
+    cali.roto_pos = SUBDIV;
 }
 
 /**
@@ -170,14 +170,14 @@ static void _state_fwd_ready_execute(_cali_ctl_t * cali_p)
     uint32_t target = SUBDIV * 2;
 
     tb_foc_set_current_vector(
-        cali.turn_pos, DRIVE_CURR);
+        cali.roto_pos, DRIVE_CURR);
 
-    cali.turn_pos += RPM;
+    cali.roto_pos += RPM;
 
-    if (cali.turn_pos != target) return;
+    if (cali.roto_pos != target) return;
 
     cali.state = STATE_FWD_START;
-    cali.turn_pos = SUBDIV;
+    cali.roto_pos = SUBDIV;
 }
 
 /**
@@ -194,7 +194,7 @@ static void _state_fwd_start_execute(_cali_ctl_t * cali_p)
      * 所以最终会采集 201 个数据，
      * 即数组下标 0-200。
      */
-    if ((cali.turn_pos % DIVIDE) == 0) {
+    if ((cali.roto_pos % DIVIDE) == 0) {
         cali.rawbuf[cali.raw_num] = _angle.raw;
         cali.raw_num++;
 
@@ -206,14 +206,14 @@ static void _state_fwd_start_execute(_cali_ctl_t * cali_p)
 
             cali.avg_cnt++;
             cali.raw_num = 0;
-            cali.turn_pos += FINE_RPM;
+            cali.roto_pos += FINE_RPM;
         }
-    } else cali.turn_pos += FINE_RPM;
+    } else cali.roto_pos += FINE_RPM;
 
     tb_foc_set_current_vector(
-        cali.turn_pos, DRIVE_CURR);
+        cali.roto_pos, DRIVE_CURR);
     
-    if (cali.turn_pos <= target) return;
+    if (cali.roto_pos <= target) return;
     cali.state = STATE_BWD_RETURN;
 }
 
@@ -226,12 +226,12 @@ static void _state_bwd_return_execute(_cali_ctl_t * cali_p)
 {
     uint32_t target = SUBDIV * 2 + DIVIDE * 20;
 
-    cali.turn_pos += FINE_RPM;
+    cali.roto_pos += FINE_RPM;
 
     tb_foc_set_current_vector(
-        cali.turn_pos, DRIVE_CURR);
+        cali.roto_pos, DRIVE_CURR);
 
-    if (cali.turn_pos != target) return;
+    if (cali.roto_pos != target) return;
     cali.state = STATE_BWD_GAP;
 }
 
@@ -244,12 +244,12 @@ static void _state_bwd_gap_execute(_cali_ctl_t * cali_p)
 {
     uint32_t target = SUBDIV * 2;
 
-    cali.turn_pos -= FINE_RPM;
+    cali.roto_pos -= FINE_RPM;
 
     tb_foc_set_current_vector(
-        cali.turn_pos, DRIVE_CURR);
+        cali.roto_pos, DRIVE_CURR);
 
-    if (cali.turn_pos != target) return;
+    if (cali.roto_pos != target) return;
 
     cali.state = STATE_BWD_START;
     cali.avg_cnt = HARD_STEPS;
@@ -269,7 +269,7 @@ static void _state_bwd_start_execute(_cali_ctl_t * cali_p)
      * 所以最终会采集 201 个数据，
      * 即数组下标 0-200。
      */
-    if ((cali.turn_pos % DIVIDE) == 0) {
+    if ((cali.roto_pos % DIVIDE) == 0) {
         cali.rawbuf[cali.raw_num] = _angle.raw;
         cali.raw_num++;
 
@@ -280,14 +280,14 @@ static void _state_bwd_start_execute(_cali_ctl_t * cali_p)
 
             cali.avg_cnt--;
             cali.raw_num = 0;
-            cali.turn_pos -= FINE_RPM;
+            cali.roto_pos -= FINE_RPM;
         }
-    } else cali.turn_pos -= FINE_RPM;
+    } else cali.roto_pos -= FINE_RPM;
 
     tb_foc_set_current_vector(
-        cali.turn_pos, DRIVE_CURR);
+        cali.roto_pos, DRIVE_CURR);
 
-    if (cali.turn_pos >= target) return;
+    if (cali.roto_pos >= target) return;
     cali.state = STATE_SOLVE;
 }
 

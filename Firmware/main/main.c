@@ -26,9 +26,6 @@
 #include "spi.h"
 #include "tim.h"
 
-#include "led.h"
-#include "key.h"
-
 /*********************
  *      DEFINES
  *********************/
@@ -39,10 +36,16 @@
 
 int32_t main()
 {
-    SystemClock_Config();
+    /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
     HAL_Init();
+
+    /* Configure the system clock */
+    SystemClock_Config();
     RetargetInit(&huart2);
 
+    Motor_Control_Init();
+
+    /* Initialize all configured peripherals */
     x42_can_init();
     x42_spi_init();
     x42_usart1_init();
@@ -51,35 +54,15 @@ int32_t main()
     x42_TIM4_init();
     x42_TIM2_init();
 
-    led_msp_init();
-    key_msp_init();
-
-    Motor_Control_Init();
-
-    cali._start = (
-        key_get_state() == 0
-    ) ? true : false;
-
-    motor_control.mode_run = \
-        Motor_Mode_Digital_Location;
-    Motor_Control_Write_Goal_Location(51200 * 10);
-    /*10 Cycle position*/
-
-    /*motor_control.mode_run = \
-        Motor_Mode_Digital_Speed;*/
-    /*Motor_Control_Write_Goal_Speed(51200 * 0.1);*/
-    /*0.1 Cycle/s*/
 
     for (;;) {
         /* Insert delay 100 ms */
-        HAL_Delay(100);
         _enc_cali_solve();
-
-        printf("angle:%d", _angle.rectified);
-        led_blink_controller_handler(&red_led);
     }
     return 0;
 }
+
+extern _cali_ctl_t cali;
 
 void _TIM2_callback_20khz()
 {
@@ -139,8 +122,7 @@ void SystemClock_Config(void)
     clkinitstruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
     clkinitstruct.APB2CLKDivider = RCC_HCLK_DIV1;
     clkinitstruct.APB1CLKDivider = RCC_HCLK_DIV2;
-    if (HAL_RCC_ClockConfig(&clkinitstruct, 
-        FLASH_LATENCY_2) != HAL_OK)
+    if (HAL_RCC_ClockConfig(&clkinitstruct, FLASH_LATENCY_2) != HAL_OK)
     {
         /* Initialization Error */
         Error_Handler();
