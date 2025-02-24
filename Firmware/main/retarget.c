@@ -7,10 +7,9 @@
  *      INCLUDES
  *********************/
 
+#include "retarget.h"
 #include <errno.h>
 #include <sys/time.h>
-#include "retarget.h"
-#include "usart.h"
 
 /*********************
  *      DEFINES

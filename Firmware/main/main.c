@@ -17,11 +17,12 @@
 #include "log.h"
 #include "ftos.h"
 
+#include "enc_cali.h"
 #include "mt6816.h"
 #include "tb67h450.h"
-#include "enc_cali.h"
 
 #include "usart.h"
+#include "gpio.h"
 #include "can.h"
 #include "spi.h"
 #include "tim.h"
@@ -34,6 +35,12 @@
  *   GLOBAL FUNCTIONS
  **********************/
 
+/**
+ * Magnetic encoder calibration, data acquisition program, 
+ * open-loop state control motor turns left once, 
+ * turn right turn in the process to collect 
+ * and store encoder output values.
+ */
 int32_t main()
 {
     /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
@@ -46,6 +53,7 @@ int32_t main()
     Motor_Control_Init();
 
     /* Initialize all configured peripherals */
+    x42_gpio_init();
     x42_can_init();
     x42_spi_init();
     x42_usart1_init();
@@ -54,6 +62,8 @@ int32_t main()
     x42_TIM4_init();
     x42_TIM2_init();
 
+    HAL_Delay(100);
+    HAL_TIM_Base_Start_IT(&htim2);
 
     for (;;) {
         /* Insert delay 100 ms */
@@ -64,6 +74,12 @@ int32_t main()
 
 extern _cali_ctl_t cali;
 
+/**
+ * Magnetic encoder calibration, data acquisition program, 
+ * open-loop state control motor turns left once, 
+ * turn right turn in the process to collect 
+ * and store encoder output values.
+ */
 void _TIM2_callback_20khz()
 {
     __HAL_TIM_CLEAR_IT(&htim2, TIM_IT_UPDATE);
@@ -79,6 +95,12 @@ void _TIM2_callback_20khz()
 
 }
 
+/**
+ * Magnetic encoder calibration, data acquisition program, 
+ * open-loop state control motor turns left once, 
+ * turn right turn in the process to collect 
+ * and store encoder output values.
+ */
 void Error_Handler(void)
 {
     /* USER CODE BEGIN Error_Handler_Debug */
@@ -90,6 +112,12 @@ void Error_Handler(void)
     /* USER CODE END Error_Handler_Debug */
 }
 
+/**
+ * Magnetic encoder calibration, data acquisition program, 
+ * open-loop state control motor turns left once, 
+ * turn right turn in the process to collect 
+ * and store encoder output values.
+ */
 void SystemClock_Config(void)
 {
     RCC_ClkInitTypeDef clkinitstruct = {0};

@@ -8,13 +8,14 @@
  *********************/
 
 #include "mt6816.h"
+#include "rom_conf.h"
 #include "spi.h"
 
 /**********************
  *  STATIC PROTOTYPES
  **********************/
 
-_magval_t _magval = {0};
+static _magval_t _magval = {0};
 _angle_t _angle = {0};
 
 /**********************

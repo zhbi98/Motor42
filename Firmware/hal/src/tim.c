@@ -1,4 +1,17 @@
 /**
+ * For example, when the official PWM 
+ * peripheral initialization function is called, 
+ * the initialization function will check 
+ * whether the corresponding named MSP 
+ * function exists, and if it exists, it will 
+ * be called.
+ * Therefore, for MCU firmware libraries that 
+ * do not support this feature, they can 
+ * implement a similar mechanism by 
+ * themselves.
+ */
+
+/**
  * @file tim.c
  *
  */
@@ -7,6 +20,7 @@
  *      INCLUDES
  *********************/
 
+#include "stm32f1xx_hal.h"
 #include "tim.h"
 
 /*********************
@@ -32,9 +46,17 @@ TIM_HandleTypeDef htim2 = {0};
   */
 void x42_TIM4_init()
 {
+    /* USER CODE BEGIN TIM4_Init 0 */
+
+    /* USER CODE END TIM4_Init 0 */
+
     /*TIM初始化*/
     TIM_MasterConfigTypeDef sMasterConfig = {0};
     TIM_OC_InitTypeDef sConfigOC = {0};
+
+    /* USER CODE BEGIN TIM4_Init 1 */
+
+    /* USER CODE END TIM4_Init 1 */
 
     /* Configure TIM */
     htim4.Instance = TIM4;
@@ -66,6 +88,9 @@ void x42_TIM4_init()
         Error_Handler();
     }
 
+    /* USER CODE BEGIN TIM1_Init 2 */
+
+    /* USER CODE END TIM1_Init 2 */
     HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
     HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
 }
@@ -113,6 +138,10 @@ void x42_TIM2_init()
     {
         Error_Handler();
     }
+
+    /* USER CODE BEGIN TIM1_Init 2 */
+
+    /* USER CODE END TIM1_Init 2 */
 }
 
 /**
@@ -129,10 +158,10 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* tim_baseHandle)
         /* USER CODE BEGIN TIM2_MspInit 0 */
 
         /* USER CODE END TIM2_MspInit 0 */
-        /* TIM4 clock enable */
+        /* TIM2 clock enable */
         __HAL_RCC_TIM2_CLK_ENABLE();
 
-        /* TIM4 interrupt Init */
+        /* TIM2 interrupt Init */
         HAL_NVIC_SetPriority(TIM2_IRQn, 0, 0);
         HAL_NVIC_EnableIRQ(TIM2_IRQn);
         /* USER CODE BEGIN TIM2_MspInit 1 */

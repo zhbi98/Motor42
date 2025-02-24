@@ -10,7 +10,7 @@
  *      INCLUDES
  *********************/
 
-#include "stm32f1xx_hal.h"
+#include "usart.h"
 #include <sys/stat.h>
 #include <stdio.h>
 #include <stdint.h>

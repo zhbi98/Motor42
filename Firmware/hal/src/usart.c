@@ -1,4 +1,17 @@
 /**
+ * For example, when the official PWM 
+ * peripheral initialization function is called, 
+ * the initialization function will check 
+ * whether the corresponding named MSP 
+ * function exists, and if it exists, it will 
+ * be called.
+ * Therefore, for MCU firmware libraries that 
+ * do not support this feature, they can 
+ * implement a similar mechanism by 
+ * themselves.
+ */
+
+/**
  * @file usart.c
  *
  */
@@ -7,6 +20,7 @@
  *      INCLUDES
  *********************/
 
+#include "stm32f1xx_hal.h"
 #include "usart.h"
 
 /*********************

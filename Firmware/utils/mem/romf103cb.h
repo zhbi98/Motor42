@@ -14,7 +14,6 @@ extern "C" {
  *      INCLUDES
  *********************/
 
-#include "stm32f1xx_hal.h"
 #include "rom_conf.h"
 #include <stdint.h>
 

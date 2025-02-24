@@ -146,6 +146,8 @@ static uint32_t _mod(uint32_t _a, uint32_t _b)
     return (_a + _b) % _b;
 }
 
+extern _angle_t _angle;
+
 /**
  * State IDLE callback function, The Mag calibration program is idle.
  * @param cali_p pointer to an '_cali_ctl_t' cali.

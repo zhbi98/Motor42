@@ -16,6 +16,7 @@
  *      INCLUDES
  *********************/
 
+#include "stm32f1xx_hal.h"
 #include "romf103cb.h"
 
 /*LL_Driver*/

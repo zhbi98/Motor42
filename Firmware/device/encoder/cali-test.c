@@ -5,33 +5,37 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define Move_Step_NUM   ((int)(200))
-#define Move_Divide_NUM ((int)(256))
-#define Move_Pulse_NUM  ((int)(Move_Step_NUM * Move_Divide_NUM))
+#define HARD_STEPS   ((int32_t)(200))
+#define DIVIDE ((int32_t)(256))
+#define SUBDIV  ((int32_t)(HARD_STEPS * DIVIDE))
 
-#define CALI_Encode_Res 16384U // 81.92 * 200
-#define CALI_Gather_Encode_Res ((int)(CALI_Encode_Res / Move_Step_NUM))
+#define ENC_RANGE 16384U // 81.92 * 200
+#define DIFF ((int32_t)(ENC_RANGE / HARD_STEPS))
 
-typedef enum {
-    // 无错误
-    CALI_No_Error = 0x00, // 数据无错误
-    //原始数据出错
-    CALI_Error_Average_Dir, // 平均值方向错误
-    CALI_Error_Average_Continuity, // 平均值连续性错误
-    CALI_Error_PhaseStep, // 阶跃次数错误
-    // 解析数据出错
-    CALI_Error_Analysis_Quantity, //解析数据量错误
-} CALI_Error;
+enum {
+    /**< There is no error in the data*/
+    ERR_NO = 0x00, 
+    /**< Wrong direction of average value acquisition*/
+    ERR_AVG_DIR, 
+    /**< Error in continuity of mean*/
+    ERR_AVG_CONTINUTY, 
+    /**< Step number error, used to find the motor starting 
+    position, because the motor does not necessarily start 
+    from the 0 position to collect data*/
+    ERR_PHASE_STEP, 
+    /**< Error parsing the amount of data*/
+    ERR_QUANTITY, 
+};
 
-unsigned int count; // 用于各个计数
-int sub_data; // 用于各个算差
-int rcd_x, rcd_y;
-unsigned char dir;
-CALI_Error  error_code;
-unsigned int error_data;
-unsigned int result_num;
+uint32_t count; // 用于各个计数
+int32_t sub_data; // 用于各个算差
+int32_t rcd_x, rcd_y;
+uint8_t dir;
+uint8_t  errid;
+uint32_t error_data;
+uint32_t result_num;
 
-unsigned short coder_data_f[Move_Step_NUM + 1] = {
+uint16_t forward[HARD_STEPS + 1] = {
     14401, 14516, 14584, 14672, 14742, 
     14839, 14911, 15000, 15073, 15168, 
     15241, 15331, 15403, 15498, 15572, 
@@ -75,7 +79,7 @@ unsigned short coder_data_f[Move_Step_NUM + 1] = {
     14413, 
 };
 
-unsigned short coder_data_r[Move_Step_NUM + 1] = {
+uint16_t backward[HARD_STEPS + 1] = {
     14450, 14524, 14614, 14685, 14776, 
     14852, 14940, 15013, 15104, 15179, 
     15268, 15342, 15433, 15508, 15596, 
@@ -119,61 +123,89 @@ unsigned short coder_data_r[Move_Step_NUM + 1] = {
     14447, 
 };
 
-int CycleSub(int a, int b, int cyc)
+/**
+ * Computes cyclic-aware subtraction with overflow compensation.
+ * @param a Minuend value (must be in [0, _cyc)).
+ * @param b Subtrahend value (must be in [0, _cyc)).
+ * @param _cyc Cycle period for overflow correction (e.g., 360° or 65536).
+ * @return Corrected difference in [-_cyc/2, _cyc/2) range.
+ */
+static int32_t _subtract(int32_t a, 
+    int32_t b, int32_t _cyc)
 {
-    int sub_data;
+    int32_t _sub = 0;
 
-    sub_data = a - b;
-    if (sub_data > (cyc >> 1))
-        sub_data -= cyc;
-    if (sub_data < (-cyc >> 1))
-        sub_data += cyc;
-    return sub_data;
+    _sub = a - b;
+    if (_sub > (_cyc >> 1))
+        _sub -= _cyc;
+    if (_sub < (-_cyc >> 1))
+        _sub += _cyc;
+
+    return _sub;
 }
 
-unsigned int CycleRem(unsigned int a,unsigned int b)
+/**
+ * Computes cyclic-safe modulus with wrap-around correction.
+ * @param _a Input value (unsigned 32-bit integer).
+ * @param  _b Modulus base (unsigned 32-bit integer).
+ * @return Safe modulus result within [0, _b) range.
+ */
+static uint32_t _mod(uint32_t _a, uint32_t _b)
 {
-    return (a + b) % b;
+    return (_a + _b) % _b;
 }
 
-int CycleAverage(int a, int b, int cyc)
+/**
+ * Computes cyclic-aware average of two values with overflow compensation.
+ * @param a First input value (32-bit integer).
+ * @param b Second input value (32-bit integer).
+ * @param _cyc Cycle modulus value (e.g., 360 for angles, 65536 for 16-bit rollover).
+ * @return Averaged value within [0, _cyc) range.
+ */
+static int32_t _average2(int32_t a, 
+    int32_t b, int32_t _cyc)
 {
-    int sub_data;
-    int ave_data;
+    int32_t _sub = 0;
+    int32_t _avg = 0;
 
-    sub_data = a - b;
-    ave_data = (a + b) >> 1;
+    _sub = a - b;
+    _avg = (a + b) >> 1;
 
-    if (abs(sub_data) > (cyc >> 1)) {
-        if (ave_data >= (cyc >> 1))
-            ave_data -= (cyc >> 1);
-        else
-            ave_data += (cyc >> 1);
+    if (abs(_sub) > (_cyc >> 1)) {
+        if (_avg >= (_cyc >> 1))
+            _avg -= (_cyc >> 1);
+        else _avg += (_cyc >> 1);
     }
-    return ave_data;
+
+    return _avg;
 }
 
+/**
+ * Look for interval subscripts and step differences, 
+ * with the aim of finding the motor start position, 
+ * as the motor does not necessarily start collecting data from the 0 position.
+ */
 void Calibration_Data_Check()
 {
-    int sub_data = 0;
+    int32_t sub_data = 0;
 
-    for (unsigned int count = 0; count < Move_Step_NUM + 1; count++) {
-        coder_data_f[count] = (unsigned short)CycleAverage(
-            (int)coder_data_f[count], 
-            (int)coder_data_r[count], 
-            CALI_Encode_Res
+    for (uint32_t count = 0; count < HARD_STEPS + 1; count++) {
+        forward[count] = (uint16_t)_average2(
+            (int32_t)forward[count], 
+            (int32_t)backward[count], 
+            ENC_RANGE
         );
     }
 
     // 平均值数据检查
-    sub_data = CycleSub(
-        (int)coder_data_f[0],
-        (int)coder_data_f[Move_Step_NUM - 1],
-        CALI_Encode_Res
+    sub_data = _subtract(
+        (int32_t)forward[0],
+        (int32_t)forward[HARD_STEPS - 1],
+        ENC_RANGE
     );
 
     if (sub_data == 0) {
-        error_code = CALI_Error_Average_Dir; 
+        errid = ERR_AVG_DIR; 
         return;
     }
 
@@ -185,57 +217,57 @@ void Calibration_Data_Check()
         dir = false;
     }
 
-    for (unsigned int count = 1; count < Move_Step_NUM; count++) {
-        sub_data = CycleSub(
-            (int)coder_data_f[count], 
-            (int)coder_data_f[count - 1], 
-            CALI_Encode_Res
+    for (uint32_t count = 1; count < HARD_STEPS; count++) {
+        sub_data = _subtract(
+            (int32_t)forward[count], 
+            (int32_t)forward[count - 1], 
+            ENC_RANGE
         );
 
         // 两次数据差过大
-        if (abs(sub_data) > (CALI_Gather_Encode_Res * 3 / 2)) {
-            error_code = CALI_Error_Average_Continuity;
+        if (abs(sub_data) > (DIFF * 3 / 2)) {
+            errid = ERR_AVG_CONTINUTY;
             error_data = count;
             return;
         }
 
         // 两次数据差过小
-        if (abs(sub_data) < (CALI_Gather_Encode_Res * 1 / 2)) {
-            error_code = CALI_Error_Average_Continuity; 
+        if (abs(sub_data) < (DIFF * 1 / 2)) {
+            errid = ERR_AVG_CONTINUTY; 
             error_data = count; 
             return;
         }
 
         if (sub_data == 0) {
-            error_code = CALI_Error_Average_Dir;
+            errid = ERR_AVG_DIR;
             error_data = count;
             return;
         }
 
         if ((sub_data > 0) && (!dir)) {
-            error_code = CALI_Error_Average_Dir;
+            errid = ERR_AVG_DIR;
             error_data = count;
             return;
         }
 
         if ((sub_data < 0) && (dir)) {
-            error_code = CALI_Error_Average_Dir;
+            errid = ERR_AVG_DIR;
             error_data = count;
             return;
         }
     }
 
-    unsigned int step_num = 0;
+    uint32_t step_num = 0;
 
     if (dir) {
-        for (unsigned int count = 0; count < Move_Step_NUM; count++) {
-            sub_data = (int)coder_data_f[CycleRem(count + 1, Move_Step_NUM)] - 
-                        (int)coder_data_f[CycleRem(count, Move_Step_NUM)];
+        for (uint32_t count = 0; count < HARD_STEPS; count++) {
+            sub_data = (int32_t)forward[_mod(count + 1, HARD_STEPS)] - 
+                        (int32_t)forward[_mod(count, HARD_STEPS)];
 
             if (sub_data < 0) {
                 step_num++;
                 rcd_x = count; // 使用区间前标
-                rcd_y = (CALI_Encode_Res - 1) - coder_data_f[CycleRem(rcd_x, Move_Step_NUM)];
+                rcd_y = (ENC_RANGE - 1) - forward[_mod(rcd_x, HARD_STEPS)];
 
                 printf("rcd_x:%d\n", rcd_x);
                 printf("rcd_y:%d\n", rcd_y);
@@ -243,19 +275,19 @@ void Calibration_Data_Check()
         }
 
         if (step_num != 1) {
-            error_code = CALI_Error_PhaseStep;
+            errid = ERR_PHASE_STEP;
             printf("STEP NUM:%d\n", step_num);
             return;
         }
     } else {
-        for (unsigned int count = 0; count < Move_Step_NUM; count++) {
-            sub_data = (int)coder_data_f[CycleRem(count + 1, Move_Step_NUM)] - 
-                        (int)coder_data_f[CycleRem(count, Move_Step_NUM)];
+        for (uint32_t count = 0; count < HARD_STEPS; count++) {
+            sub_data = (int32_t)forward[_mod(count + 1, HARD_STEPS)] - 
+                        (int32_t)forward[_mod(count, HARD_STEPS)];
             
             if (sub_data > 0) {
                 step_num++;
                 rcd_x = count; // 使用区间前标
-                rcd_y = (CALI_Encode_Res - 1) - coder_data_f[CycleRem(rcd_x + 1, Move_Step_NUM)];
+                rcd_y = (ENC_RANGE - 1) - forward[_mod(rcd_x + 1, HARD_STEPS)];
 
                 printf("rcd_x:%d\n", rcd_x);
                 printf("rcd_y:%d\n", rcd_y);
@@ -263,19 +295,25 @@ void Calibration_Data_Check()
         }
 
         if (step_num != 1) {
-            error_code = CALI_Error_PhaseStep;
+            errid = ERR_PHASE_STEP;
             printf("STEP NUM:%d\n", step_num);
             return;
         }
     }
 }
 
+/**
+ * The collected 200 data (one data collected every 1.8°) are processed linearly interpolated, 
+ * and the 200 data are interpolated to 16384 data, 
+ * and the interpolated data range is 0-512000, that is, 256 * 200 = 512000, 
+ * which is the number of single-turn pulses of the stepper motor.
+ */
 void calibration_loop()
 {
-    int data_i32;
-    unsigned short data_u16;
+    int32_t val;
+    uint16_t _val;
 
-    if (error_code == CALI_No_Error) {
+    if (errid == ERR_NO) {
         int32_t step_x, step_y;
         result_num = 0;
 
@@ -283,81 +321,93 @@ void calibration_loop()
         // rom_data_begin(&_quick_cali); // 开始写数据区
 
         if (dir) {
-            for (step_x = rcd_x; step_x < rcd_x + Move_Step_NUM + 1; step_x++) {
-                data_i32 = CycleSub(
-                    coder_data_f[CycleRem(step_x+1, Move_Step_NUM)],
-                    coder_data_f[CycleRem(step_x,   Move_Step_NUM)],
-                    CALI_Encode_Res
+            for (step_x = rcd_x; step_x < rcd_x + HARD_STEPS + 1; step_x++) {
+                val = _subtract(
+                    forward[_mod(step_x+1, HARD_STEPS)],
+                    forward[_mod(step_x,   HARD_STEPS)],
+                    ENC_RANGE
                 );
 
-                if (step_x == rcd_x) { // 开始边缘
-                    for (step_y = rcd_y; step_y < data_i32; step_y++) {
-                        data_u16 = CycleRem(
-                            Move_Divide_NUM * step_x + Move_Divide_NUM * step_y / data_i32,
-                            Move_Pulse_NUM
+                // 开始边缘
+                if (step_x == rcd_x) { 
+                    for (step_y = rcd_y; step_y < val; step_y++) {
+                        _val = _mod(
+                            DIVIDE * step_x + DIVIDE * step_y / val,
+                            SUBDIV
                         );
 
-                        // rom_write_data16(&_quick_cali, &data_u16, 1);
+                        // rom_write_data16(&_quick_cali, &_val, 1);
                         result_num++;
                     }
-                } else if (step_x == rcd_x + Move_Step_NUM) { // 结束边缘
+                } 
+                else 
+                // 结束边缘
+                if (step_x == rcd_x + HARD_STEPS) { 
                     for (step_y = 0; step_y < rcd_y; step_y++) {
-                        data_u16 = CycleRem(
-                            Move_Divide_NUM * step_x + Move_Divide_NUM * step_y / data_i32,
-                            Move_Pulse_NUM
+                        _val = _mod(
+                            DIVIDE * step_x + DIVIDE * step_y / val,
+                            SUBDIV
                         );
 
-                        // rom_write_data16(&_quick_cali, &data_u16, 1);
+                        // rom_write_data16(&_quick_cali, &_val, 1);
                         result_num++;
                     }
-                } else { // 中间
-                    for (step_y = 0; step_y < data_i32; step_y++) {
-                        data_u16 = CycleRem(
-                            Move_Divide_NUM * step_x + Move_Divide_NUM * step_y / data_i32,
-                            Move_Pulse_NUM
+                } 
+                // 中间
+                else { 
+                    for (step_y = 0; step_y < val; step_y++) {
+                        _val = _mod(
+                            DIVIDE * step_x + DIVIDE * step_y / val,
+                            SUBDIV
                         );
 
-                        // rom_write_data16(&_quick_cali, &data_u16, 1);
+                        // rom_write_data16(&_quick_cali, &_val, 1);
                         result_num++;
                     }
                 }
             }
         } else {
-            for (step_x = rcd_x + Move_Step_NUM; step_x > rcd_x - 1; step_x--) {
-                data_i32 = CycleSub(
-                    coder_data_f[CycleRem(step_x, Move_Step_NUM)],
-                    coder_data_f[CycleRem(step_x + 1, Move_Step_NUM)],
-                    CALI_Encode_Res
+            for (step_x = rcd_x + HARD_STEPS; step_x > rcd_x - 1; step_x--) {
+                val = _subtract(
+                    forward[_mod(step_x, HARD_STEPS)],
+                    forward[_mod(step_x + 1, HARD_STEPS)],
+                    ENC_RANGE
                 );
 
-                if (step_x == rcd_x + Move_Step_NUM) { // 开始边缘
-                    for(step_y = rcd_y; step_y < data_i32; step_y++){
-                        data_u16 = CycleRem(
-                            Move_Divide_NUM * (step_x + 1) - Move_Divide_NUM * step_y / data_i32,
-                            Move_Pulse_NUM
+                // 开始边缘
+                if (step_x == rcd_x + HARD_STEPS) { 
+                    for(step_y = rcd_y; step_y < val; step_y++){
+                        _val = _mod(
+                            DIVIDE * (step_x + 1) - DIVIDE * step_y / val,
+                            SUBDIV
                         );
 
-                        // rom_write_data16(&_quick_cali, &data_u16, 1);
+                        // rom_write_data16(&_quick_cali, &_val, 1);
                         result_num++;
                     }
-                } else if(step_x == rcd_x) { // 结束边缘
+                } 
+                else 
+                // 结束边缘
+                if(step_x == rcd_x) { 
                     for (step_y = 0; step_y < rcd_y; step_y++) {
-                        data_u16 = CycleRem(
-                            Move_Divide_NUM * (step_x + 1) - Move_Divide_NUM * step_y / data_i32,
-                            Move_Pulse_NUM
+                        _val = _mod(
+                            DIVIDE * (step_x + 1) - DIVIDE * step_y / val,
+                            SUBDIV
                         );
 
-                        // rom_write_data16(&_quick_cali, &data_u16, 1);
+                        // rom_write_data16(&_quick_cali, &_val, 1);
                         result_num++;
                     }
-                } else { // 中间
-                    for (step_y = 0; step_y < data_i32; step_y++) {
-                        data_u16 = CycleRem(
-                            Move_Divide_NUM * (step_x + 1) - Move_Divide_NUM * step_y / data_i32,
-                            Move_Pulse_NUM
+                } 
+                // 中间
+                else { 
+                    for (step_y = 0; step_y < val; step_y++) {
+                        _val = _mod(
+                            DIVIDE * (step_x + 1) - DIVIDE * step_y / val,
+                            SUBDIV
                         );
 
-                        // rom_write_data16(&_quick_cali, &data_u16, 1);
+                        // rom_write_data16(&_quick_cali, &_val, 1);
                         result_num++;
                     }
                 }
@@ -366,35 +416,35 @@ void calibration_loop()
 
         // rom_data_end(&_quick_cali); // 结束写数据区
         
-        if (result_num != CALI_Encode_Res)
-            error_code = CALI_Error_Analysis_Quantity;
+        if (result_num != ENC_RANGE)
+            errid = ERR_QUANTITY;
         else
             printf("MT6816 CAL SUCCESS\n");
     }
 }
 
-int main()
+int32_t main()
 {
-    // int a = CycleSub(1000, 800, 16384);
-    // printf("CycleSub:%d\n", a);
+    int32_t a = _subtract(1000, 800, 16384);
+    printf("_subtract:%d\n", a);
 
-    // int _a = CycleSub(82, 16400, 16400);
-    // printf("CycleSub:%d\n", _a);
+    int32_t _a = _subtract(82, 16400, 16400);
+    printf("_subtract:%d\n", _a);
 
-    // int b = CycleRem(10, 200);
-    // printf("CycleRem:%d\n", b);
+    int32_t b = _mod(10, 200);
+    printf("_mod:%d\n", b);
 
     Calibration_Data_Check();
 
     /*--------------------
-    CycleSub:200
-    CycleSub:82
-    CycleRem:10
+    _subtract:200
+    _subtract:82
+    _mod:10
     rcd_x:199
     rcd_y:81
     --------------------*/
 
-    error_code = CALI_No_Error;
+    errid = ERR_NO;
     calibration_loop();
 
     return 0;

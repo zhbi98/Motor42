@@ -31,16 +31,10 @@ static _key_event_t key_evt = {
  */
 static uint8_t key_drive_code()
 {
-    uint8_t val = 0x00;
+    uint8_t val = 0xFF;
 
-    val = (val << 1) | key0_level();
-    val = (val << 1) | key1_level();
-    val = (val << 1) | (0x01);
-    val = (val << 1) | (0x01);
-    val = (val << 1) | (0x01);
-    val = (val << 1) | (0x01);
-    val = (val << 1) | (0x01);
-    val = (val << 1) | (0x01);
+    val = (val & 0x7F) | key0_level();
+    val = (val & 0xBF) | key1_level();
 
     return val;
 }

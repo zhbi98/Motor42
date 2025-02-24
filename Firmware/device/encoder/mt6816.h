@@ -12,8 +12,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "time.h"
-#include "rom_conf.h"
 
 /**********************
  *      TYPEDEFS
@@ -65,8 +63,5 @@ void _mag_tick_work();
  * @return HAL status.
  */
 uint8_t _mag_calibrated();
-
-extern _magval_t _magval;
-extern _angle_t _angle;
 
 #endif

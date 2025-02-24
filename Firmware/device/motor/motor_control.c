@@ -492,7 +492,8 @@ void Motor_Control_Init(void)
 	Location_Interp_Init();		//位置插补器初始化
 }
 
-extern _cali_ctl_t calHandle;
+extern _cali_ctl_t cali;
+extern _angle_t _angle;
 
 /**
   * @brief  控制器任务回调
@@ -501,7 +502,7 @@ extern _cali_ctl_t calHandle;
 **/
 void Motor_Control_Callback(void)
 {
-    if (calHandle._start) return;
+    if (cali._start) return;
 	/************************************ 首次进入控制回调 ************************************/
 	/************************************ 首次进入控制回调 ************************************/
 	static bool first_call = true;

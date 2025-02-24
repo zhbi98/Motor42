@@ -80,7 +80,7 @@ add_link_options(-Wl,-gc-sections,--print-memory-usage,-Map=${PROJECT_BINARY_DIR
 add_link_options(-mcpu=cortex-m3 -mthumb -mthumb-interwork)
 add_link_options(-T ${LINKER_SCRIPT})
 
-add_executable(${PROJECT_NAME}.elf ${HAL_DRIVER} ${SYSTEM} ${DRIVER} ${ENCODER} ${MOTOR} ${SIGNAL} ${DEVHAL} ${MAIN} ${UTILS} ${MEM} ${MODBUS} ${LINKER_SCRIPT})
+add_executable(${PROJECT_NAME}.elf ${HAL_DRIVER} ${SYSTEM} ${DRIVER} ${ENCODER} ${MOTOR} ${SIGNAL} ${DEVHAL} ${MAIN} ${UTILS} ${MEM} ${MODBUS} ${STARTUP} ${LINKER_SCRIPT})
 
 set(HEX_FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.hex)
 set(BIN_FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.bin)

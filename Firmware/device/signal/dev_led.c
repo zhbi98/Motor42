@@ -8,6 +8,7 @@
  *********************/
 
 #include "dev_led.h"
+#include <stddef.h>
 
 /*********************
  *      DEFINES
@@ -15,6 +16,13 @@
 
 /*LED Maximum time between blinks.*/
 #define LED_MAX 0xFFFFU
+
+/**********************
+ *  STATIC PROTOTYPES
+ **********************/
+
+static void _led_on_tick(led_obj_t * led_p);
+static void _led_off_tick(led_obj_t * led_p);
 
 /**********************
  * GLOBAL FUNCTIONS
@@ -25,27 +33,43 @@
  * @param led Pointer to LED control 
  * object (must be pre-initialized)
  */
+static void _led_on_tick(led_obj_t * led_p)
+{
+    led_p->on_tick--;
+    if (led_p->on_tick <= 0) {
+        led_p->state = LED_OFF;
+        led_p->off_tick = MS_TO_TICKS(
+            led_p->_on_time, LED_REPEAT);
+    }
+}
+
+/**
+ * Non-blocking LED state machine driver
+ * @param led Pointer to LED control 
+ * object (must be pre-initialized)
+ */
+static void _led_off_tick(led_obj_t * led_p)
+{
+    led_p->off_tick--;
+    if (led_p->off_tick <= 0) {
+        led_p->state = LED_ON;
+        led_p->on_tick = MS_TO_TICKS(
+            led_p->_off_time, LED_REPEAT);
+    }
+}
+
+/**
+ * Non-blocking LED state machine driver
+ * @param led Pointer to LED control 
+ * object (must be pre-initialized)
+ */
 void _led_tick_work(led_obj_t * led_p)
 {
     if (led_p == NULL) return;
 
-    if (led_p->state != LED_ON) {
-        led_p->off_tick--;
-        if (led_p->off_tick <= 0) {
-            led_p->state = LED_ON;
-            led_p->on_tick = MS_TO_TICKS(
-                    led_p->_off_time, 
-                    LED_REPEAT);
-        }
-    } else {
-        led_p->on_tick--;
-        if (led_p->on_tick <= 0) {
-            led_p->state = LED_OFF;
-            led_p->off_tick = MS_TO_TICKS(
-                    led_p->_on_time, 
-                    LED_REPEAT);
-        }
-    }
+    if (led_p->state != LED_ON) 
+        _led_off_tick(led_p);
+    else _led_on_tick(led_p);
 
     if (led_p->state != led_p->last) {
         if (led_p->refer != NULL)
