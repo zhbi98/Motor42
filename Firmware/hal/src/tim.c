@@ -179,14 +179,14 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef* tim_pwmHandle)
 {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-    if(tim_pwmHandle->Instance == TIM2)
+    if(tim_pwmHandle->Instance == TIM4)
     {
-        /* USER CODE BEGIN TIM2_MspInit 0 */
+        /* USER CODE BEGIN TIM4_MspInit 0 */
 
-        /* USER CODE END TIM2_MspInit 0 */
-        /* TIM2 clock enable */
-        __HAL_RCC_TIM2_CLK_ENABLE();
-        /* USER CODE BEGIN TIM2_MspInit 1 */
+        /* USER CODE END TIM4_MspInit 0 */
+        /* TIM4 clock enable */
+        __HAL_RCC_TIM4_CLK_ENABLE();
+        /* USER CODE BEGIN TIM4_MspInit 1 */
 
         __HAL_RCC_GPIOB_CLK_ENABLE();
         /**TIM4 GPIO Configuration
@@ -202,7 +202,7 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef* tim_pwmHandle)
         GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
         HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-        /* USER CODE END TIM2_MspInit 1 */
+        /* USER CODE END TIM4_MspInit 1 */
     }
 }
 
