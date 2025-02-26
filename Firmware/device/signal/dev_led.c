@@ -46,12 +46,11 @@ static size_t register_nr = 0;
  **********************/
 
 /**
-* button initialization
-*
-* @param[in] registered indicator array table pointer
-* @param[in] led_nr indicates the number of elements in the array of lights
-* @return 0, success; -1, failed
-*/
+ * Register the LED device with the manager.
+ * @param registered indicator array table pointer.
+ * @param led_nr indicates the number of elements in the array of lights.
+ * @return Status update was successful.
+ */
 int32_t led_dev_register(led_dev_t registered[], size_t led_nr)
 {
     uint8_t _id = 0;
@@ -67,8 +66,8 @@ int32_t led_dev_register(led_dev_t registered[], size_t led_nr)
 }
 
 /**
- * Set animation default parameters.
- * @param a pointer to an 'lv_anim_t' animation.
+ * Set LED device default parameters.
+ * @param _attr pointer to an 'led_attr_t' LED device attribute.
  */
 void led_dev_attr_default_init(led_attr_t * _attr)
 {
@@ -88,12 +87,12 @@ void led_dev_attr_default_init(led_attr_t * _attr)
 }
 
 /**
-* Set the LED on and off
-*
-* @param [in] LED designation indicator
-* @param[in] state
-* @return 0, success; -1, failed
-*/
+ * Set the LED on and off.
+ * @param LED designation indicator.
+ * @param _id Specify the LED device number.
+ * @param state Sets the state of the specified LED device.
+ * @return Status update was successful.
+ */
 int32_t led_dev_set_state(led_id_t _id, uint8_t state)
 {
     if (registered_p == NULL) return - 1;
@@ -112,14 +111,12 @@ int32_t led_dev_set_state(led_id_t _id, uint8_t state)
 }
 
 /**
-* Set the LED on and off and the duration
-*
-* @attention time should be a multiple of the scheduling cycle of the control task
-* @param [in] LED designation indicator
-* @param[in] state
-* @param[in] time duration, in milliseconds
-* @return 0, success; -1, failed
-*/
+ * Set the LED on and off and the duration
+ * @param _id Specify the LED device number.
+ * @param state Sets the state of the specified LED device.
+ * @param time Duration of the state.
+ * @return Status update was successful.
+ */
 int32_t led_dev_set_state_by_time(led_id_t _id, uint8_t state, 
     uint16_t time)
 {
@@ -145,33 +142,30 @@ int32_t led_dev_set_state_by_time(led_id_t _id, uint8_t state,
 }
 
 /**
-* Light up the LED
-*
-* @param [in] LED designation indicator
-* @return 0, success; -1, failed
-*/
+ * Light up the LED.
+ * @param _id Specify the LED device number.
+ * @return Status update was successful.
+ */
 int32_t led_dev_set_on(led_id_t _id)
 {
     return led_dev_set_state(_id, LED_ON);
 }
 
 /**
-* Turn off the LED
-*
-* @param [in] LED designation indicator
-* @return 0, success; -1, failed
-*/
+ * Light OFF the LED.
+ * @param _id Specify the LED device number.
+ * @return Status update was successful.
+ */
 int32_t led_dev_set_off(led_id_t _id)
 {
     return led_dev_set_state(_id, LED_OFF);
 }
 
 /**
-* Flip the specified LED on and off state
-*
-* @param LED designated indicator
-* @return 0, success; -1, failed
-*/
+ * Flip the specified LED on and off state.
+ * @param _id Specify the LED device number.
+ * @return Status update was successful.
+ */
 int32_t led_dev_set_toggle(led_id_t _id)
 {
     if (registered_p == NULL) return - 1;
@@ -193,13 +187,11 @@ int32_t led_dev_set_toggle(led_id_t _id)
 }
 
 /**
-* Set the LED to flashing state
-*
-* @attention time should be a multiple of the scheduling cycle of the control task
-* @param [in] LED designation indicator
-* @param[in] time between flashing on and off, in milliseconds
-* @return 0, success; -1, failed
-*/
+ * Set the LED to flashing state.
+ * @param _id Specify the LED device number.
+ * @param time between flashing on and off, in milliseconds.
+ * @return Status update was successful.
+ */
 int32_t led_dev_set_twinkle(led_id_t _id, uint16_t time)
 {
     if (registered_p == NULL) return - 1;
@@ -217,16 +209,11 @@ int32_t led_dev_set_twinkle(led_id_t _id, uint16_t time)
 }
 
 /**
-* Set the LED to the flashing state and the number of times, and the last time the time is completed
-*
-* @note One on and off for one flash
-* @attention time should be a multiple of the scheduling cycle of the control task
-* @param [in] LED designation indicator
-* @param[in] time between flashing on and off, in milliseconds
-* @param[in] count the number of flashes
-* @param [in] statedef on and off after the number of flashes is completed
-* @return 0, success; -1, failed
-*/
+ * Set the LED to flashing state.
+ * @param _id Specify the LED device number.
+ * @param time between flashing on and off, in milliseconds.
+ * @return Status update was successful.
+ */
 int32_t led_dev_twinkle_by_cnt(led_id_t _id, uint16_t time, 
     uint8_t count, uint8_t statedef)
 {
@@ -253,14 +240,12 @@ int32_t led_dev_twinkle_by_cnt(led_id_t _id, uint16_t time,
 }
 
 /**
-* Set as a marquee for multiple LEDs
-*
-* @note
-* @param [in] LED LED group
-* @param[in] led_nr Number of LEDs
-* @param [in] time LED light on time
-* @return 0, success; -1, failed
-*/
+ * Set as a marquee for multiple LEDs.
+ * @param _id LED ID group.
+ * @param led_nr Number of LEDs.
+ * @param time LED light on time.
+ * @return Status update was successful.
+ */
 int32_t led_dev_marquee(led_id_t _id[], uint8_t led_nr, int32_t time)
 {
     led_attr_t * _attr = NULL;
@@ -282,17 +267,15 @@ int32_t led_dev_marquee(led_id_t _id[], uint8_t led_nr, int32_t time)
 }
 
 /**
-* Set the marquee and the number of times for multiple LEDs, 
-* and the last time is on and off after the last number of times is completed
-*
-* @note
-* @param [in] LED LED group
-* @param[in] led_nr Number of LEDs
-* @param [in] time LED light on time
-* @param[in] count the number of marquees
-* @param[in] statedef The state of the marquee after the number of times it is completed
-* @return 0, success; -1, failed
-*/
+ * Set the marquee and the number of times for multiple LEDs, 
+ * and the last time is on and off after the last number of times is completed.
+ * @param _id LED ID group.
+ * @param led_nr Number of LEDs.
+ * @param time LED light on time.
+ * @param ount the number of marquees.
+ * @param statedef The state of the marquee after the number of times it is completed.
+ * @return Status update was successful.
+ */
 int32_t led_dev_marquee_by_cnt(led_id_t _id[], uint8_t led_nr, 
     int32_t time, uint8_t count, uint8_t statedef)
 {
@@ -322,14 +305,12 @@ int32_t led_dev_marquee_by_cnt(led_id_t _id[], uint8_t led_nr,
 }
 
 /**
-* Set up running lights for multiple LEDs
-*
-* @note
-* @param [in] LED LED group
-* @param[in] led_nr Number of LEDs
-* @param [in] time LED light on time
-* @return 0, success; -1, failed
-*/
+ * Set up running lights for multiple LEDs.
+ * @param _id LED ID group.
+ * @param led_nr Number of LEDs.
+ * @param time LED light on time.
+ * @return Status update was successful.
+ */
 int32_t led_dev_waterfall(led_id_t _id[], uint8_t led_nr, int32_t time)
 {
     led_attr_t * _attr = NULL;
@@ -351,17 +332,15 @@ int32_t led_dev_waterfall(led_id_t _id[], uint8_t led_nr, int32_t time)
 }
 
 /**
-* Set the running light and the number of times for multiple LEDs, 
-* and the state will be on and off after the last number of times is completed
-*
-* @note
-* @param [in] LED LED group
-* @param[in] led_nr Number of LEDs
-* @param [in] time LED light on time
-* @param[in] count the number of running lights
-* @param [in] statedef The state of the running light after the number of times the lamp is completed
-* @return 0, success; -1, failed
-*/
+ * Set the running light and the number of times for multiple LEDs, 
+ * and the state will be on and off after the last number of times is completed.
+ * @param _id LED ID group.
+ * @param led_nr Number of LEDs.
+ * @param time LED light on time.
+ * @param count the number of running lights.
+ * @param statedef The state of the number of times the LED is completed.
+ * @return Status update was successful.
+ */
 int32_t led_dev_waterfall_by_cnt(led_id_t _id[], uint8_t led_nr, 
     int32_t time, uint8_t count, uint8_t statedef)
 {
@@ -391,13 +370,11 @@ int32_t led_dev_waterfall_by_cnt(led_id_t _id[], uint8_t led_nr,
 }
 
 /**
-* Set the designated LED to breathing light mode
-*
-* @attention LED control task must be 1ms cycle
-* @param [in] LED designation indicator
-* @param[in] period respiration cycle, i.e., how often to complete breathing; Milliseconds
-* @return 0, success; -1, failed
-*/
+ * Set the designated LED to breathing light mode
+ * @param _id Specify the LED device number.
+ * @param period respiration cycle.
+ * @return Status update was successful.
+ */
 int32_t led_dev_set_breathe(led_id_t _id, uint16_t period)
 {
     if (registered_p == NULL) return - 1;
@@ -418,16 +395,14 @@ int32_t led_dev_set_breathe(led_id_t _id, uint16_t period)
 }
 
 /**
-* Set the specified LED to the breathing light mode and the number of times, 
-* and the last time it will be on and off
-*
-* @attention LED control task must be 1ms cycle
-* @param [in] LED designation indicator
-* @param[in] period respiration cycle, i.e., how often to complete breathing; Milliseconds
-* @param[in] count times
-* @param [in] statedef on and off state after the number of times
-* @return 0, success; -1, failed
-*/
+ * Set the specified LED to the breathing light mode and the number of times, 
+ * and the last time it will be on and off
+ * @param _id LED ID group.
+ * @param period respiration cycle.
+ * @param count times.
+ * @param statedef on and off state after the number of times.
+ * @return Status update was successful.
+ */
 int32_t led_dev_set_breathe_by_cnt(led_id_t _id, uint16_t period, 
     uint8_t count, uint8_t statedef)
 {
@@ -453,16 +428,10 @@ int32_t led_dev_set_breathe_by_cnt(led_id_t _id, uint16_t period,
 }
 
 /**
-* Set the custom state of the LED
-*
-* @attention time should be a multiple of the scheduling cycle of the control task
-* @param [in] LED designation indicator
-* @param[in] ... Bright-on and off-time parameters:
-* > 0, the duration of the light
-* < 0, the duration of extinguishment
-* = 0, the end of the variable parameter setting
-* @return 0, success; -1, failed
-*/
+ * Set the custom state of the LED.
+ * @param _id LED ID group.
+ * @return Status update was successful.
+ */
 int32_t led_dev_custom(led_id_t _id, ...)
 {
     uint8_t bits;
@@ -525,19 +494,13 @@ int32_t led_dev_custom(led_id_t _id, ...)
 
 
 /**
-* Set the custom status and number of times of the LED, and the state 
-* of on and off after the last time is completed
-*
-* @attention time should be a multiple of the scheduling cycle of the control task
-* @param [in] LED designation indicator
-* @param[in] count the number of times you can customize the status, and 0 indicates that there is no limit to the number of times
-* @param[in] statedef The state that turns on and off after the number of custom state times is completed
-* @param[in] ... Bright-on and off-time parameters:
-* > 0, the duration of the light
-* < 0, the duration of extinguishment
-* = 0, the end of the variable parameter setting
-* @return 0, success; -1, failed
-*/
+ * Set the custom status and number of times of the LED, and the state 
+ * of on and off after the last time is completed.
+ * @param _id LED ID group.
+ * @param count the number of times you can customize the status.
+ * @param statedef The state of the number of custom state times is completed.
+ * @return Status update was successful.
+ */
 int32_t led_dev_custom_by_cnt(led_id_t _id, uint8_t count, 
     uint8_t statedef, ...)
 {
@@ -603,11 +566,10 @@ int32_t led_dev_custom_by_cnt(led_id_t _id, uint8_t count,
 }
 
 /**
-* LED control cycle tasks
-*
-* @param[in] sysTime system runtime, in milliseconds
-* @return 0, success; -1, failed
-*/
+ * LED control cycle tasks.
+ * @param sysTime system runtime, in milliseconds.
+ * @return Status update was successful.
+ */
 static uint8_t _req_pwmled_state(led_attr_t *_attr_p)
 {
     uint8_t _led_state;
@@ -623,11 +585,10 @@ static uint8_t _req_pwmled_state(led_attr_t *_attr_p)
 }
 
 /**
-* LED control cycle tasks
-*
-* @param[in] sysTime system runtime, in milliseconds
-* @return 0, success; -1, failed
-*/
+ * LED control cycle tasks.
+ * @param[in] sysTime system runtime, in milliseconds.
+ * @return Status update was successful.
+ */
 static void _pwmled_state_update(led_attr_t *_attr_p)
 {
     if (_attr_p->tic > _attr_p->interval) {
@@ -650,11 +611,10 @@ static void _pwmled_state_update(led_attr_t *_attr_p)
 }
 
 /**
-* LED control cycle tasks
-*
-* @param[in] sysTime system runtime, in milliseconds
-* @return 0, success; -1, failed
-*/
+ * LED control cycle tasks.
+ * @param[in] sysTime system runtime, in milliseconds.
+ * @return Status update was successful.
+ */
 int32_t led_dev_task_handler()
 {
     led_attr_t * _attr = NULL;
