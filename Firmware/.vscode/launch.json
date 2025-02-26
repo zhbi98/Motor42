@@ -6,7 +6,7 @@
     "configurations": [
         {
             "cwd": "${workspaceRoot}",
-            "executable": "build/StepDriver.elf",
+            "executable": "build/Motor42.elf",
             "name": "Debug with OpenOCD",
             "request": "launch",
             "type": "cortex-debug",

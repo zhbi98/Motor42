@@ -11,7 +11,7 @@
 				"-f",
 				"target/stm32f1x.cfg",
 				"-c",
-				"program build/StepDriver.elf verify reset exit"
+				"program build/Motor42.elf verify reset exit"
 			],
 			"problemMatcher": [
 				"$gcc"

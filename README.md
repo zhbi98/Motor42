@@ -1,3 +1,3 @@
-# StepDriver
+# Motor42
 
-![image.png](./Image/20230318165718.jpg)
+具有多功能接口和闭环功能的步进电机。
