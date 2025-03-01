@@ -10,6 +10,7 @@
  *      INCLUDES
  *********************/
 
+#include "control_config.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -20,10 +21,6 @@
  *      DEFINES
  *********************/
 
-#define HARD_STEPS 200U /*Motor One circle hard steps*/
-#define DIVIDE 256U /*Soft divide num*/
-#define SUBDIV (HARD_STEPS * DIVIDE) /*Motor One circle subdivide steps*/
-#define DRIVE_CURR 2000U /*Drive current during calibration*/
 #define READ_CNT 16U /*Data collection amount per hardware acquisition point*/
 
 /**********************
@@ -91,7 +88,7 @@ typedef struct {
     position and rotate the 
     motor rotor to the 
     specified position*/
-    uint32_t roto_pos;
+    uint32_t _target;
     /**< Data from the same collection 
     point is collected multiple times*/
     uint16_t rawbuf[READ_CNT];
@@ -99,10 +96,10 @@ typedef struct {
     uint16_t raw_num;
     /**< Forward calibration reads
     data, 201(0-200) data collected*/
-    uint16_t forward[HARD_STEPS + 1];
+    uint16_t forward[Move_Step_NUM + 1];
     /**< Backward calibration reads 
     data, 201(0-200) data collected*/
-    uint16_t backward[HARD_STEPS + 1];
+    uint16_t backward[Move_Step_NUM + 1];
     /**< Multiple acquisition 
     point average counts*/
     uint16_t avg_cnt;
@@ -113,7 +110,7 @@ typedef struct {
     int32_t rcd_x;
     int32_t rcd_y;
     uint32_t result_num;
-} _cali_ctl_t;
+} _cali_attr_t;
 
 /**********************
  * GLOBAL PROTOTYPES

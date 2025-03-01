@@ -52,7 +52,8 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/device/driver
     ${CMAKE_SOURCE_DIR}/device/encoder
     ${CMAKE_SOURCE_DIR}/device/motor
-    ${CMAKE_SOURCE_DIR}/device/signal/DevLed
+    ${CMAKE_SOURCE_DIR}/device/signal
+    ${CMAKE_SOURCE_DIR}/device/signal/LedMX
     ${CMAKE_SOURCE_DIR}/device/signal/MultiButton
     ${CMAKE_SOURCE_DIR}/hal/inc
     ${CMAKE_SOURCE_DIR}/main
@@ -67,7 +68,8 @@ aux_source_directory(${CMAKE_SOURCE_DIR}/drivers/CMSIS/Device/ST/STM32F1xx/Sourc
 aux_source_directory(${CMAKE_SOURCE_DIR}/device/driver DRIVER)
 aux_source_directory(${CMAKE_SOURCE_DIR}/device/encoder ENCODER)
 aux_source_directory(${CMAKE_SOURCE_DIR}/device/motor MOTOR)
-aux_source_directory(${CMAKE_SOURCE_DIR}/device/signal/DevLed DEVLED)
+aux_source_directory(${CMAKE_SOURCE_DIR}/device/signal SIGNAL)
+aux_source_directory(${CMAKE_SOURCE_DIR}/device/signal/LedMX LEDMX)
 aux_source_directory(${CMAKE_SOURCE_DIR}/device/signal/MultiButton BUTTON)
 aux_source_directory(${CMAKE_SOURCE_DIR}/hal/src DEVHAL)
 aux_source_directory(${CMAKE_SOURCE_DIR}/main MAIN)
@@ -82,7 +84,7 @@ add_link_options(-Wl,-gc-sections,--print-memory-usage,-Map=${PROJECT_BINARY_DIR
 add_link_options(-mcpu=cortex-m3 -mthumb -mthumb-interwork)
 add_link_options(-T ${LINKER_SCRIPT})
 
-add_executable(${PROJECT_NAME}.elf ${HAL_DRIVER} ${SYSTEM} ${DRIVER} ${ENCODER} ${MOTOR} ${DEVLED} ${BUTTON} ${DEVHAL} ${MAIN} ${UTILS} ${MEM} ${MODBUS} ${STARTUP} ${LINKER_SCRIPT})
+add_executable(${PROJECT_NAME}.elf ${HAL_DRIVER} ${SYSTEM} ${DRIVER} ${ENCODER} ${MOTOR} ${SIGNAL} ${LEDMX} ${BUTTON} ${DEVHAL} ${MAIN} ${UTILS} ${MEM} ${MODBUS} ${STARTUP} ${LINKER_SCRIPT})
 
 set(HEX_FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.hex)
 set(BIN_FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.bin)

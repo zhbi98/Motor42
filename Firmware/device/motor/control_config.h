@@ -63,17 +63,12 @@ extern "C" {
 #define Move_Rated_UpCurrentRate		((int32_t)(20 * Current_Rated_Current))	//(固件额定增流梯度)(20倍额定/s)
 #define Move_Rated_DownCurrentRate	((int32_t)(20 * Current_Rated_Current))	//(固件额定减流梯度)(20倍额定/s)
 
-/****************************************  校准器配置区  ****************************************/
-#define CALI_Encode_Bit					((int32_t)(14))																//(编码器位宽)(14位输出精度)
-#define CALI_Encode_Res					((int32_t)((0x00000001U) << CALI_Encode_Bit))	//(编码器分辨率)(2^14 = 16384)(16k分辨率)(占用32k校准空间)
-#define CALI_Gather_Encode_Res	((int32_t)(CALI_Encode_Res / Move_Step_NUM))	//(校准每采集步编码器分辨率)
-
 /****************************************  控制器频率配置区  ****************************************/
 #define CONTROL_FREQ_HZ			(20000)												//控制频率_hz
 #define CONTROL_PERIOD_US		(1000000 / CONTROL_FREQ_HZ)		//控制周期_us
 
-//void Control_Config_Init_Static(void);	//控制静态配置
-//void Control_Config_Init_Dynamic(void);	//控制动态配置
+// void Control_Config_Init_Static(void);	//控制静态配置
+// void Control_Config_Init_Dynamic(void);	//控制动态配置
 
 #ifdef __cplusplus
 }

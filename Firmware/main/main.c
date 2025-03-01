@@ -20,6 +20,9 @@
 #include "enc_cali.h"
 #include "mt6816.h"
 #include "tb67h450.h"
+#include "led_anim.h"
+#include "btn_doing.h"
+#include "ledmx.h"
 
 #include "usart.h"
 #include "gpio.h"
@@ -50,6 +53,7 @@ int32_t main()
     SystemClock_Config();
     RetargetInit(&huart2);
 
+    _enc_dev_init();
     Motor_Control_Init();
 
     /* Initialize all configured peripherals */
@@ -65,14 +69,20 @@ int32_t main()
     HAL_Delay(100);
     HAL_TIM_Base_Start_IT(&htim2);
 
+    led_anim_start();
+    btn_doing_start();
+
     for (;;) {
         /* Insert delay 100 ms */
+        led_dev_task_handler();
         _enc_cali_solve();
+        led_anim_tick_work();
+        btn_doing_tick_work();
     }
     return 0;
 }
 
-extern _cali_ctl_t cali;
+extern _cali_attr_t cali;
 
 /**
  * Magnetic encoder calibration, data acquisition program, 
@@ -84,10 +94,13 @@ void _TIM2_callback_20khz()
 {
     __HAL_TIM_CLEAR_IT(&htim2, TIM_IT_UPDATE);
 
-    _mag_tick_work();
+    _enc_dev_tick_work();
 
     if (cali._start) _enc_cali_tick_work();
     else Motor_Control_Callback();
+
+    led_anim_tick_inc(1);
+    btn_doing_tick_inc(1);
 
     /*if (encoderCalibrator.isTriggered)*/
     /*    encoderCalibrator.Tick20kHz();*/

@@ -17,18 +17,17 @@
  *      DEFINES
  *********************/
 
-#define ENC_RANGE 16384U /*2^14 = 16384*/
-#define FINE_RPM 1U
-#define RPM 2U
+#define AUTO_SPEED 2U
+#define FINE_SPEED 1U
 
 /**********************
  *      TYPEDEFS
  **********************/
 
-_cali_ctl_t cali = {
+_cali_attr_t cali = {
     .state = STATE_IDLE,
     .errid = ERR_NO,
-    .roto_pos = 0,
+    ._target = 0,
     ._start = false,
     .raw_num = 0,
     .avg_cnt = 0,
@@ -43,12 +42,12 @@ static int32_t _average(const uint16_t * data_p, uint16_t len, int32_t _cyc);
 static int32_t _average2(int32_t a, int32_t b, int32_t _cyc);
 static int32_t _subtract(int32_t a, int32_t b, int32_t _cyc);
 static uint32_t _mod(uint32_t _a, uint32_t _b);
-static void _state_idle_execute(_cali_ctl_t * cali_p);
-static void _state_fwd_ready_execute(_cali_ctl_t * cali_p);
-static void _state_fwd_start_execute(_cali_ctl_t * cali_p);
-static void _state_bwd_return_execute(_cali_ctl_t * cali_p);
-static void _state_bwd_gap_execute(_cali_ctl_t * cali_p);
-static void _state_bwd_start_execute(_cali_ctl_t * cali_p);
+static void _state_idle_execute(_cali_attr_t * cali_p);
+static void _state_fwd_ready_execute(_cali_attr_t * cali_p);
+static void _state_fwd_start_execute(_cali_attr_t * cali_p);
+static void _state_bwd_return_execute(_cali_attr_t * cali_p);
+static void _state_bwd_gap_execute(_cali_attr_t * cali_p);
+static void _state_bwd_start_execute(_cali_attr_t * cali_p);
 static void _enc_cali_verify();
 
 /**********************
@@ -150,147 +149,144 @@ extern _angle_t _angle;
 
 /**
  * State IDLE callback function, The Mag calibration program is idle.
- * @param cali_p pointer to an '_cali_ctl_t' cali.
+ * @param cali_p pointer to an '_cali_attr_t' cali.
  * @return next state.
  */
-static void _state_idle_execute(_cali_ctl_t * cali_p)
+static void _state_idle_execute(_cali_attr_t * cali_p)
 {
-    tb_foc_set_current_vector(
-        cali.roto_pos, DRIVE_CURR);
+    tb_foc_set_current_vector(cali_p->_target, 
+        Current_Cali_Current);
 
-    cali.state = STATE_FWD_READY;
-    cali.roto_pos = SUBDIV;
+    cali_p->state = STATE_FWD_READY;
+    cali_p->_target = Move_Pulse_NUM;
 }
 
 /**
  * State forward ready callback function, prepare the forward auto-calibration encoder.
- * @param cali_p pointer to an '_cali_ctl_t' cali.
+ * @param cali_p pointer to an '_cali_attr_t' cali.
  * @return next state.
  */
-static void _state_fwd_ready_execute(_cali_ctl_t * cali_p)
+static void _state_fwd_ready_execute(_cali_attr_t * cali_p)
 {
-    uint32_t target = SUBDIV * 2;
+    uint32_t target = Move_Pulse_NUM * 2;
 
-    tb_foc_set_current_vector(
-        cali.roto_pos, DRIVE_CURR);
+    tb_foc_set_current_vector(cali_p->_target, 
+        Current_Cali_Current);
 
-    cali.roto_pos += RPM;
+    cali_p->_target += AUTO_SPEED;
 
-    if (cali.roto_pos != target) return;
+    if (cali_p->_target != target) return;
 
-    cali.state = STATE_FWD_START;
-    cali.roto_pos = SUBDIV;
+    cali_p->state = STATE_FWD_START;
+    cali_p->_target = Move_Pulse_NUM;
 }
 
 /**
  * State forward start callback function, forward acquisition of encoder measurements.
- * @param cali_p pointer to an '_cali_ctl_t' cali.
+ * @param cali_p pointer to an '_cali_attr_t' cali.
  * @return next state.
  */
-static void _state_fwd_start_execute(_cali_ctl_t * cali_p)
+static void _state_fwd_start_execute(_cali_attr_t * cali_p)
 {
-    uint32_t target = SUBDIV * 2;
+    uint32_t target = Move_Pulse_NUM * 2;
 
     /**
      * 由于第一次执行到此处就会采集数据，
      * 所以最终会采集 201 个数据，
      * 即数组下标 0-200。
      */
-    if ((cali.roto_pos % DIVIDE) == 0) {
-        cali.rawbuf[cali.raw_num] = _angle.raw;
-        cali.raw_num++;
+    if ((cali_p->_target % Move_Divide_NUM) == 0) {
+        cali_p->rawbuf[cali_p->raw_num] = _angle.raw;
+        cali_p->raw_num++;
 
-        if (cali.raw_num == READ_CNT) {
+        if (cali_p->raw_num == READ_CNT) {
+            cali_p->forward[cali_p->avg_cnt] = \
+                _average(cali_p->rawbuf, READ_CNT, RESOLUTION);
 
-            cali.forward[cali.avg_cnt] = \
-                _average(cali.rawbuf, 
-                    READ_CNT, ENC_RANGE);
-
-            cali.avg_cnt++;
-            cali.raw_num = 0;
-            cali.roto_pos += FINE_RPM;
+            cali_p->avg_cnt++;
+            cali_p->raw_num = 0;
+            cali_p->_target += FINE_SPEED;
         }
-    } else cali.roto_pos += FINE_RPM;
+    } else cali_p->_target += FINE_SPEED;
 
-    tb_foc_set_current_vector(
-        cali.roto_pos, DRIVE_CURR);
+    tb_foc_set_current_vector(cali_p->_target, 
+        Current_Cali_Current);
     
-    if (cali.roto_pos <= target) return;
-    cali.state = STATE_BWD_RETURN;
+    if (cali_p->_target <= target) return;
+    cali_p->state = STATE_BWD_RETURN;
 }
 
 /**
  * State backward return callback function, back it up.
- * @param cali_p pointer to an '_cali_ctl_t' cali.
+ * @param cali_p pointer to an '_cali_attr_t' cali.
  * @return next state.
  */
-static void _state_bwd_return_execute(_cali_ctl_t * cali_p)
+static void _state_bwd_return_execute(_cali_attr_t * cali_p)
 {
-    uint32_t target = SUBDIV * 2 + DIVIDE * 20;
+    uint32_t target = Move_Pulse_NUM * 2 + Move_Divide_NUM * 20;
 
-    cali.roto_pos += FINE_RPM;
+    cali_p->_target += FINE_SPEED;
 
-    tb_foc_set_current_vector(
-        cali.roto_pos, DRIVE_CURR);
+    tb_foc_set_current_vector(cali_p->_target, 
+        Current_Cali_Current);
 
-    if (cali.roto_pos != target) return;
-    cali.state = STATE_BWD_GAP;
+    if (cali_p->_target != target) return;
+    cali_p->state = STATE_BWD_GAP;
 }
 
 /**
  * State backward elimination callback function, reverse elimination of error.
- * @param cali_p pointer to an '_cali_ctl_t' cali.
+ * @param cali_p pointer to an '_cali_attr_t' cali.
  * @return next state.
  */
-static void _state_bwd_gap_execute(_cali_ctl_t * cali_p)
+static void _state_bwd_gap_execute(_cali_attr_t * cali_p)
 {
-    uint32_t target = SUBDIV * 2;
+    uint32_t target = Move_Pulse_NUM * 2;
 
-    cali.roto_pos -= FINE_RPM;
+    cali_p->_target -= FINE_SPEED;
 
-    tb_foc_set_current_vector(
-        cali.roto_pos, DRIVE_CURR);
+    tb_foc_set_current_vector(cali_p->_target, 
+        Current_Cali_Current);
 
-    if (cali.roto_pos != target) return;
+    if (cali_p->_target != target) return;
 
-    cali.state = STATE_BWD_START;
-    cali.avg_cnt = HARD_STEPS;
+    cali_p->state = STATE_BWD_START;
+    cali_p->avg_cnt = Move_Step_NUM;
 }
 
 /**
  * State backward start callback function, backward acquisition of encoder measurements.
- * @param cali_p pointer to an '_cali_ctl_t' cali.
+ * @param cali_p pointer to an '_cali_attr_t' cali.
  * @return next state.
  */
-static void _state_bwd_start_execute(_cali_ctl_t * cali_p)
+static void _state_bwd_start_execute(_cali_attr_t * cali_p)
 {
-    uint32_t target = SUBDIV;
+    uint32_t target = Move_Pulse_NUM;
 
     /**
      * 由于第一次执行到此处就会采集数据，
      * 所以最终会采集 201 个数据，
      * 即数组下标 0-200。
      */
-    if ((cali.roto_pos % DIVIDE) == 0) {
-        cali.rawbuf[cali.raw_num] = _angle.raw;
-        cali.raw_num++;
+    if ((cali_p->_target % Move_Divide_NUM) == 0) {
+        cali_p->rawbuf[cali_p->raw_num] = _angle.raw;
+        cali_p->raw_num++;
 
-        if (cali.raw_num == READ_CNT) {
-            cali.backward[cali.avg_cnt] = \
-                _average(cali.rawbuf, 
-                    READ_CNT, ENC_RANGE);
+        if (cali_p->raw_num == READ_CNT) {
+            cali_p->backward[cali_p->avg_cnt] = \
+                _average(cali_p->rawbuf, READ_CNT, RESOLUTION);
 
-            cali.avg_cnt--;
-            cali.raw_num = 0;
-            cali.roto_pos -= FINE_RPM;
+            cali_p->avg_cnt--;
+            cali_p->raw_num = 0;
+            cali_p->_target -= FINE_SPEED;
         }
-    } else cali.roto_pos -= FINE_RPM;
+    } else cali_p->_target -= FINE_SPEED;
 
-    tb_foc_set_current_vector(
-        cali.roto_pos, DRIVE_CURR);
+    tb_foc_set_current_vector(cali_p->_target, 
+        Current_Cali_Current);
 
-    if (cali.roto_pos >= target) return;
-    cali.state = STATE_SOLVE;
+    if (cali_p->_target >= target) return;
+    cali_p->state = STATE_SOLVE;
 }
 
 /**
@@ -324,18 +320,21 @@ static void _enc_cali_verify()
     int32_t diff3 = 0;
     uint32_t step = 0;
 
-    for (uint32_t i = 0; i < (HARD_STEPS + 1); i++) {
+    int32_t resolution = RESOLUTION / Move_Step_NUM;
+
+    for (uint32_t i = 0; i < (Move_Step_NUM + 1); i++) {
         cali.forward[i] = (uint16_t)_average2(
             (int32_t)cali.forward[i], 
-            (int32_t)cali.backward[i], ENC_RANGE);
+            (int32_t)cali.backward[i], 
+            RESOLUTION);
     }
 
     uint16_t * data_p = cali.forward;
 
     /*使用第一个数据和最后一个数据比较，判断数据方向性。*/
     int32_t diff1 = _subtract(
-        data_p[0], data_p[HARD_STEPS - 1], 
-        ENC_RANGE);
+        data_p[0], data_p[Move_Step_NUM - 1], 
+        RESOLUTION);
 
 
     if (diff1 != 0) {
@@ -346,24 +345,25 @@ static void _enc_cali_verify()
         return;
     }
     
-    for (uint32_t i = 1; i < HARD_STEPS; i++) {
+    for (uint32_t i = 1; i < Move_Step_NUM; i++) {
         /**
          * 连续循环计算前后相邻两个数据的相差值，用于判断数据的连续性，
          * 以及数据差值的分布是否均匀，在十分理想的条件下两个
          * 数据的相差值是 16384 / 200 = 81.92。
+         * 即 RESOLUTION / Move_Step_NUM。
          */
         diff2 = _subtract(data_p[i], 
-            data_p[i - 1], ENC_RANGE);
+            data_p[i - 1], RESOLUTION);
         
-        /*相邻两次采集的数据相差过大*/
-        if (abs(diff2) > (ENC_RANGE / HARD_STEPS * 3 / 2)) {
+        /*相邻两次采集的数据相差过大，大于正常间隔 3/2*/
+        if (abs(diff2) > (resolution * 3 / 2)) {
             cali.errid = ERR_AVG_CONTINUTY;
             cali.errdata = i;
             return;
         }
 
-        /*相邻两次采集的数据相差差过小*/
-        if (abs(diff2) < (ENC_RANGE / HARD_STEPS * 1 / 2)) {
+        /*相邻两次采集的数据相差差过小，小于正常间隔 1/2*/
+        if (abs(diff2) < (resolution * 1 / 2)) {
             cali.errid = ERR_AVG_CONTINUTY;
             cali.errdata = i;
             return;
@@ -393,28 +393,25 @@ static void _enc_cali_verify()
     uint16_t ofs = 0;
 
     if (cali._dir) {
-        for (uint32_t i = 0; i < HARD_STEPS; i++) {
+        for (uint32_t i = 0; i < Move_Step_NUM; i++) {
+            _ofs = _mod(i + 0, Move_Step_NUM);
+            ofs = _mod(i + 1, Move_Step_NUM);
 
-            _ofs = _mod(i + 0, HARD_STEPS);
-            ofs = _mod(i + 1, HARD_STEPS);
             diff3 = (int32_t)data_p[ofs] - (int32_t)data_p[_ofs];
 
             if (diff3 < 0) {
                 step++;
                 /*使用区间前标*/
                 cali.rcd_x = i;
-                cali.rcd_y = (ENC_RANGE - 1) - \
-                    data_p[_mod((cali.rcd_x + 0), HARD_STEPS)];
+                cali.rcd_y = (RESOLUTION - 1) - \
+                    data_p[_mod((cali.rcd_x + 0), Move_Step_NUM)];
             }
         }
-        if (step != 1) {
-            cali.errid = ERR_PHASE_STEP;
-            return;
-        }
+        if (step != 1) {cali.errid = ERR_PHASE_STEP; return;}
     } else {
-        for (uint32_t i = 0; i < HARD_STEPS; i++) {
-            _ofs = _mod(i + 0, HARD_STEPS);
-            ofs = _mod(i + 1, HARD_STEPS);
+        for (uint32_t i = 0; i < Move_Step_NUM; i++) {
+            _ofs = _mod(i + 0, Move_Step_NUM);
+            ofs = _mod(i + 1, Move_Step_NUM);
 
             diff3 = (int32_t)data_p[ofs] - (int32_t)data_p[_ofs];
 
@@ -422,14 +419,11 @@ static void _enc_cali_verify()
                 step++;
                 /*使用区间前标*/
                 cali.rcd_x = i;
-                cali.rcd_y = (ENC_RANGE - 1) - \
-                    data_p[_mod((cali.rcd_x + 1), HARD_STEPS)];
+                cali.rcd_y = (RESOLUTION - 1) - \
+                    data_p[_mod((cali.rcd_x + 1), Move_Step_NUM)];
             }
         }
-        if (step != 1) {
-            cali.errid = ERR_PHASE_STEP;
-            return;
-        }
+        if (step != 1) {cali.errid = ERR_PHASE_STEP; return;}
     }
 
     cali.errid = ERR_NO;
@@ -458,25 +452,27 @@ void _enc_cali_solve()
     cali.result_num = 0;
 
     if (cali._dir) {
-        for (step_x = cali.rcd_x; step_x < cali.rcd_x + HARD_STEPS + 1; step_x++) {
+        for (step_x = cali.rcd_x; step_x < cali.rcd_x + Move_Step_NUM + 1; step_x++) {
             val = _subtract(
-                cali.forward[_mod(step_x + 1, HARD_STEPS)], 
-                cali.forward[_mod(step_x, HARD_STEPS)], 
-                ENC_RANGE);
+                cali.forward[_mod(step_x + 1, Move_Step_NUM)], 
+                cali.forward[_mod(step_x, Move_Step_NUM)], 
+                RESOLUTION);
 
             /*Start the edge*/
             if (step_x == cali.rcd_x) {
                 for (step_y = cali.rcd_y; step_y < val; step_y++) {
-                    _val = _mod(DIVIDE * step_x + DIVIDE * step_y / val, SUBDIV);
+                    _val = _mod(Move_Divide_NUM * step_x + Move_Divide_NUM * step_y / val, 
+                                Move_Pulse_NUM);
                     rom_write_data16(&_quick_cali, &_val, 1);
                     cali.result_num++;
                 }
             } 
             else 
             /*End edge*/
-            if (step_x == cali.rcd_x + HARD_STEPS) {
+            if (step_x == cali.rcd_x + Move_Step_NUM) {
                 for (step_y = 0; step_y < cali.rcd_y; step_y++) {
-                    _val = _mod(DIVIDE * step_x + DIVIDE * step_y / val,SUBDIV);
+                    _val = _mod(Move_Divide_NUM * step_x + Move_Divide_NUM * step_y / val, 
+                                Move_Pulse_NUM);
                     rom_write_data16(&_quick_cali, &_val, 1);
                     cali.result_num++;
                 }
@@ -484,23 +480,25 @@ void _enc_cali_solve()
             /*Middle*/
             else {
                 for (step_y = 0; step_y < val; step_y++) {
-                    _val = _mod(DIVIDE * step_x + DIVIDE * step_y / val,SUBDIV);
+                    _val = _mod(Move_Divide_NUM * step_x + Move_Divide_NUM * step_y / val, 
+                                Move_Pulse_NUM);
                     rom_write_data16(&_quick_cali, &_val, 1);
                     cali.result_num++;
                 }
             }
         }
     } else {
-        for (step_x = cali.rcd_x + HARD_STEPS; step_x > cali.rcd_x - 1; step_x--) {
+        for (step_x = cali.rcd_x + Move_Step_NUM; step_x > cali.rcd_x - 1; step_x--) {
             val = _subtract(
-                cali.forward[_mod(step_x, HARD_STEPS)], 
-                cali.forward[_mod(step_x + 1, HARD_STEPS)], 
-                ENC_RANGE);
+                cali.forward[_mod(step_x, Move_Step_NUM)], 
+                cali.forward[_mod(step_x + 1, Move_Step_NUM)], 
+                RESOLUTION);
 
             /*Start the edge*/
-            if (step_x == cali.rcd_x + HARD_STEPS) {
+            if (step_x == cali.rcd_x + Move_Step_NUM) {
                 for (step_y = cali.rcd_y; step_y < val; step_y++) {
-                    _val = _mod(DIVIDE * (step_x + 1) - DIVIDE * step_y / val, SUBDIV);
+                    _val = _mod(Move_Divide_NUM * (step_x + 1) - Move_Divide_NUM * step_y / val, 
+                                Move_Pulse_NUM);
                     rom_write_data16(&_quick_cali, &_val, 1);
                     cali.result_num++;
                 }
@@ -509,7 +507,8 @@ void _enc_cali_solve()
             /*End edge*/
             if (step_x == cali.rcd_x) {
                 for (step_y = 0; step_y < cali.rcd_y; step_y++) {
-                    _val = _mod(DIVIDE * (step_x + 1) - DIVIDE * step_y / val, SUBDIV);
+                    _val = _mod(Move_Divide_NUM * (step_x + 1) - Move_Divide_NUM * step_y / val, 
+                                Move_Pulse_NUM);
                     rom_write_data16(&_quick_cali, &_val, 1);
                     cali.result_num++;
                 }
@@ -517,7 +516,8 @@ void _enc_cali_solve()
             /*Middle*/
             else {
                 for (step_y = 0; step_y < val; step_y++) {
-                    _val = _mod(DIVIDE * (step_x + 1) - DIVIDE * step_y / val, SUBDIV);
+                    _val = _mod(Move_Divide_NUM * (step_x + 1) - Move_Divide_NUM * step_y / val, 
+                                Move_Pulse_NUM);
                     rom_write_data16(&_quick_cali, &_val, 1);
                     cali.result_num++;
                 }
@@ -529,7 +529,7 @@ void _enc_cali_solve()
     rom_data_end(&_quick_cali);
     
     /*The number of calibrated data is incorrect*/
-    if (cali.result_num != ENC_RANGE)
+    if (cali.result_num != RESOLUTION)
         cali.errid = ERR_QUANTITY;
 
     if (cali.errid != ERR_NO) {

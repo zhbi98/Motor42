@@ -22,7 +22,7 @@ _angle_t _angle = {0};
  *  STATIC VARIABLES
  **********************/
 
-static uint16_t * caldata_p = NULL;
+static uint16_t * cali_addr = NULL;
 
 /**********************
  *   GLOBAL FUNCTIONS
@@ -32,14 +32,14 @@ static uint16_t * caldata_p = NULL;
  * Initializes magnetic calibration data 
  * and validates stored values.
  */
-void _mag_init()
+void _enc_dev_init()
 {
-    caldata_p = (uint16_t *)APP_CALI_ADDR;
+    cali_addr = (uint16_t *)APP_CALI_ADDR;
 
     /*Check if the stored calibration data are valid*/
     _angle.rectify_valid = true;
-    for (uint32_t i = 0; i < 16384; i++) {
-        if (caldata_p[i] == 0xFFFF)
+    for (uint32_t i = 0; i < RESOLUTION; i++) {
+        if (cali_addr[i] == 0xFFFF)
             _angle.rectify_valid = false;
     }
 }
@@ -49,7 +49,7 @@ void _mag_init()
  * @param data 16-bit data to transmit (MSB/LSB order depends on SPI config).
  * @return 16-bit received data from slave device.
  */
-static uint16_t _mag_read_reg(uint16_t data)
+static uint16_t hal_spi_read(uint16_t data)
 {
     uint16_t val = 0x0000;
 
@@ -70,7 +70,7 @@ static uint16_t _mag_read_reg(uint16_t data)
  * Reads 16-bit magnetic sensor value via SPI using two 8-bit registers.
  * @return Combined 16-bit magnetic measurement value.
  */
-static uint16_t spi_read_magval()
+static uint16_t hal_spi_read_data()
 {
     uint16_t tx_buf[2] = {0};
     uint16_t rx_buf[2] = {0};
@@ -78,8 +78,8 @@ static uint16_t spi_read_magval()
     tx_buf[0] = (0x80 | 0x03) << 8; /*0x8300*/
     tx_buf[1] = (0x80 | 0x04) << 8; /*0x8400*/
 
-    rx_buf[0] = _mag_read_reg(tx_buf[0]);
-    rx_buf[1] = _mag_read_reg(tx_buf[1]);
+    rx_buf[0] = hal_spi_read(tx_buf[0]);
+    rx_buf[1] = hal_spi_read(tx_buf[1]);
 
     uint16_t val = ((rx_buf[0] & 0x00FF) << 8);
     val |= (rx_buf[1] & 0x00FF);
@@ -91,7 +91,7 @@ static uint16_t spi_read_magval()
  * Polls magnetic encoder data with triple-read attempt 
  * and parity validation.updates _angle global structures.
  */
-void _mag_tick_work()
+void _enc_dev_tick_work()
 {
     uint8_t high_cnt = 0;
     uint16_t checked = 0;
@@ -101,7 +101,7 @@ void _mag_tick_work()
     encoder 3 times in cycles*/
 
     for (uint8_t i = 0; i < 3; i++) {
-        data = spi_read_magval();
+        data = hal_spi_read_data();
         high_cnt = 0;
 
         /*Parity check, which determines the 
@@ -111,10 +111,10 @@ void _mag_tick_work()
                 high_cnt++;
 
         checked = (high_cnt & 0x01) ? 0 : 1;
+        _magval.checked = checked;
         if (checked) break;
     }
 
-    _magval.checked = checked;
     if (!checked) return;
 
     _magval.data = data;
@@ -122,7 +122,7 @@ void _mag_tick_work()
 
     _magval.no_mag = (bool)(data & (0x0001 << 1));
     _angle.raw = _magval.angle;
-    _angle.rectified = caldata_p[_angle.raw];
+    _angle.rectified = cali_addr[_angle.raw];
 }
 
 /**
@@ -130,7 +130,7 @@ void _mag_tick_work()
  * encoder has been calibrated.
  * @return Rectify valid.
  */
-uint8_t _mag_calibrated()
+uint8_t _enc_dev_calibrated()
 {
     return _angle.rectify_valid;
 }

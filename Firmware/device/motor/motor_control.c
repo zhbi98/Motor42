@@ -492,7 +492,7 @@ void Motor_Control_Init(void)
 	Location_Interp_Init();		//位置插补器初始化
 }
 
-extern _cali_ctl_t cali;
+extern _cali_attr_t cali;
 extern _angle_t _angle;
 
 /**
@@ -604,7 +604,7 @@ void Motor_Control_Callback(void)
 			default:	break;
 		}
 	}
-#if 0 // Add by zhbi98
+#if 0 /*Add by zhbi98*/
 	/************************************ 模式变更 ************************************/
 	/************************************ 模式变更 ************************************/
 	//变更
@@ -633,7 +633,7 @@ void Motor_Control_Callback(void)
 	}
 #endif
 
-#if 0 // Add by zhbi98
+#if 0 /*Add by zhbi98*/
 	/************************************ 硬目标提取 ************************************/
 	/************************************ 硬目标提取 ************************************/
 	//提取

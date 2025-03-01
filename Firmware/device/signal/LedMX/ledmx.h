@@ -3,8 +3,8 @@
  *
  */
 
-#ifndef __DEV_LED_H__
-#define __DEV_LED_H__
+#ifndef __LED_MX_H__
+#define __LED_MX_H__
 
 /*********************
  *      INCLUDES
@@ -90,4 +90,4 @@ int32_t led_dev_waterfall_by_cnt(led_id_t _id[], uint8_t led_nr, int32_t time, u
 int32_t led_dev_task_handler();
 void led_dev_tick_inc(uint32_t tick_period);
 
-#endif /*__DEV_LED_H__*/
+#endif /*__LED_MX_H__*/
