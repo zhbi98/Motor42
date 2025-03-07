@@ -444,6 +444,7 @@ void Motor_Control_Init(void)
 
 	//模式
 	motor_control.mode_run = Control_Mode_Stop;
+	motor_control.mode_order = Control_Mode_Stop;
 	//读取
 	motor_control.real_lap_location = 0;
 	motor_control.real_lap_location_last = 0;
@@ -604,6 +605,13 @@ void Motor_Control_Callback(void)
 			default:	break;
 		}
 	}
+
+	if(motor_control.mode_run != motor_control.mode_order)
+	{
+		motor_control.mode_run = motor_control.mode_order;
+		motor_control.soft_new_curve = true;
+	}
+
 #if 0 /*Add by zhbi98*/
 	/************************************ 模式变更 ************************************/
 	/************************************ 模式变更 ************************************/

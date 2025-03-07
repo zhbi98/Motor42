@@ -14,6 +14,7 @@
 #include "gpio.h"
 #include "ledmx.h"
 #include "control_config.h"
+#include "enc_cali.h"
 
 /*********************
  *      DEFINES
@@ -54,44 +55,63 @@ static uint8_t _read_driver(uint8_t btn_id)
     case 1: return HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_15); break;
     default: return 0; break;
     }
+
+    return 0;
 }
 
 #define TICK_TIMES 1U
 
 /**
- * Calibration mode entry callback, Triggers LED matrix special pattern.
- */
-static void _motor_btn1_long()
-{
-    uint16_t time = 300 * TICK_TIMES;
-    uint8_t led_id = 0;
-
-    led_dev_twinkle_by_cnt(led_id, 
-        time, 3, LED_OFF);
-}
-
-/**
- * Calibration mode entry callback, Triggers LED matrix special pattern.
+ * Operation Control mode of reset motor entry callback, 
+ * Triggers LED matrix special pattern.
  */
 static void _motor_btn1_click()
 {
     uint16_t time = 200 * TICK_TIMES;
     uint8_t led_id = 0;
 
-    Motor_Mode * _rmode_p = \
+    Motor_Mode * _run_p = \
             &motor_control.mode_run;
 
-    if (*_rmode_p != Control_Mode_Stop) {
-        modedef = *_rmode_p;
-        *_rmode_p = Control_Mode_Stop;
-    } else *_rmode_p = modedef;
+    Motor_Mode * _req_p = \
+        &motor_control.mode_order;
+
+    /*Operation Control mode of reset motor*/
+    if (*_run_p != Control_Mode_Stop) {
+        modedef = *_run_p;
+        *_req_p = Control_Mode_Stop;
+    } else *_req_p = modedef;
 
     led_dev_set_state_by_time(led_id, 
         LED_ON, time);
 }
 
+extern _cali_attr_t cali;
+uint8_t acti_cali = false;
+
 /**
- * Calibration mode entry callback, Triggers LED matrix special pattern.
+ * Calibration mode entry callback, 
+ * Triggers LED matrix special pattern.
+ */
+static void _motor_btn1_long()
+{
+    uint16_t time = 300 * TICK_TIMES;
+    uint8_t led_id = 0;
+
+    /*Calibration of activated magnetic encoder*/
+    if (!acti_cali) {acti_cali = true; return;}
+    if (cali._start != 1) cali._start = 1;
+
+    led_dev_twinkle_by_cnt(led_id, 
+        time, 3, LED_OFF);
+
+    acti_cali = false;
+}
+
+/**
+ * Motor operating parameters reset, parameters 
+ * reset back to the initial position entry callback, 
+ * Triggers LED matrix special pattern.
  */
 static void _motor_btn2_click()
 {
@@ -101,17 +121,34 @@ static void _motor_btn2_click()
     switch (motor_control.mode_run) {
     case Motor_Mode_Digital_Location:
     case Motor_Mode_PWM_Location:
+        /*Control the motor shaft back to the origin position*/
         Motor_Control_Write_Goal_Location(0);
         break;
     case Motor_Mode_Digital_Speed:
     case Motor_Mode_PWM_Speed:
+        /*Control the motor shaft back to the origin position*/
         Motor_Control_Write_Goal_Speed(0);
         break;
     case Motor_Mode_Digital_Current:
     case Motor_Mode_PWM_Current:
+        /*Control the motor shaft back to the origin position*/
         Motor_Control_Write_Goal_Current(0);
         break;
     }
+
+    led_dev_set_state_by_time(led_id, 
+        LED_ON, time);
+}
+
+/**
+ * Calibration mode entry callback, Triggers LED matrix special pattern.
+ */
+static void _motor_btn2_long()
+{
+    uint16_t time = 200 * TICK_TIMES;
+    uint8_t led_id = 0;
+
+    HAL_NVIC_SystemReset();
 
     led_dev_set_state_by_time(led_id, 
         LED_ON, time);
@@ -125,12 +162,16 @@ static void _motor_btn2_click()
  */
 void btn_doing_start()
 {
-    button_init(&btn1, _read_driver, 0, 0);
-    button_init(&btn2, _read_driver, 1, 1);
+    uint8_t btn1_id = 0;
+    uint8_t btn2_id = 1;
 
-    button_attach(&btn1, PRESS_UP, _motor_btn1_click);
+    button_init(&btn1, _read_driver, 0, btn1_id);
+    button_init(&btn2, _read_driver, 0, btn2_id);
+
+    button_attach(&btn1, SINGLE_CLICK, _motor_btn1_click);
     button_attach(&btn1, LONG_PRESS_START, _motor_btn1_long);
-    button_attach(&btn2, PRESS_UP, _motor_btn2_click);
+    button_attach(&btn2, SINGLE_CLICK, _motor_btn2_click);
+    button_attach(&btn2, LONG_PRESS_START, _motor_btn2_long);
 
     button_start(&btn1);
     button_start(&btn2);
