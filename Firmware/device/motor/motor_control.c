@@ -432,6 +432,76 @@ void Motor_Control_Write_Goal_Brake(uint16_t value)
 }
 
 /**
+  * @brief  写入目标位置, by zhbi98
+  * @param  NULL
+  * @retval NULL
+**/
+bool Motor_Control_Write_Goal_Location_WithTime(int32_t _pos, float _time)
+{
+    int32_t enc_home_ofs = 0;
+    int32_t deltaPos = abs(_pos - motor_control.real_location + enc_home_ofs);
+
+    float pMax = (float)Move_Rated_UpAcc * _time * _time / 4;
+    if ((float) deltaPos > pMax)
+    {
+        /*context->config.motionParams.ratedVelocity = boardConfig.velocityLimit;*/
+        Move_Rated_Speed = 30U * Move_Pulse_NUM;
+        Motor_Control_Write_Goal_Location(_pos);
+
+        return false;
+    } else
+    {
+        float vMax = _time * (float)Move_Rated_UpAcc;
+        vMax -= (float)Move_Rated_UpAcc *
+                (sqrtf(_time * _time - 4 * (float)deltaPos /
+                                       (float)Move_Rated_UpAcc));
+        vMax /= 2;
+
+        Move_Rated_Speed = (int32_t)vMax;
+        Motor_Control_Write_Goal_Location(_pos);
+
+        return true;
+    }
+}
+
+/**
+  * @brief  读取目标位置, by zhbi98
+  * @param  NULL
+  * @retval NULL
+**/
+float Motor_Control_Read_Goal_Position(bool _is_lap)
+{
+	int32_t enc_home_ofs = 0;
+
+  return _is_lap ?
+         (float)(motor_control.real_lap_location - enc_home_ofs) /
+         (float)(Move_Pulse_NUM)
+                :
+         (float)(motor_control.real_location - enc_home_ofs) /
+         (float)(Move_Pulse_NUM);
+}
+
+/**
+  * @brief  读取目标速度, by zhbi98
+  * @param  NULL
+  * @retval NULL
+**/
+float Motor_Control_Read_Goal_Speed()
+{
+    return (float)motor_control.est_speed / (float)Move_Pulse_NUM;
+}
+
+/**
+  * @brief  读取目标电流, by zhbi98
+  * @param  NULL
+  * @retval NULL
+**/
+float Motor_Control_Read_Goal_FocCurrent()
+{
+    return (float)motor_control.foc_current / 1000.f;
+}
+
+/**
   * @brief  电机控制初始化
   * @param  NULL
   * @retval NULL

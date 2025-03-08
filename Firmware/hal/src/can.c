@@ -108,6 +108,15 @@ void x42_can_init()
         CAN_IT_ERROR_WARNING | CAN_IT_ERROR_PASSIVE |
         CAN_IT_BUSOFF | CAN_IT_LAST_ERROR_CODE |
         CAN_IT_ERROR);
+
+    /* Configure Transmission process */
+    TxHeader.StdId = 0x01/*boardConfig.canNodeId*/;
+    TxHeader.ExtId = 0x00;
+    TxHeader.RTR = CAN_RTR_DATA;
+    TxHeader.IDE = CAN_ID_STD;
+    TxHeader.DLC = 8;
+    TxHeader.TransmitGlobalTime = DISABLE;
+    /* USER CODE END CAN_Init 2 */
 }
 
 /**
@@ -239,11 +248,20 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef* hcan)
         Error_Handler();
     }
 
+    /**
+     * CAN is configured in identifier masking mode, 
+     * all packets are received, and the corresponding ID packets are filtered 
+     * out in the form of software masks, which is commonly 
+     * referred to as software filtering
+     */
+
     uint8_t id = (RxHeader.StdId >> 7); // 4Bits ID & 7Bits Msg
     uint8_t cmd = RxHeader.StdId & 0x7F; // 4Bits ID & 7Bits Msg
-    if (id == 0 || id == 0/*boardConfig.canNodeId*/)
+    if (id == 0 || id == 0x01/*boardConfig.canNodeId*/)
     {
         /*OnCanCmd(cmd, RxData, RxHeader.DLC);*/
+        extern void dev_can_cmd(uint8_t _cmd, uint8_t * _data, uint32_t _len);
+        dev_can_cmd(cmd, RxData, RxHeader.DLC);
     }
 }
 /* USER CODE END 1 */

@@ -118,6 +118,13 @@ static void _motor_btn2_click()
     uint16_t time = 200 * TICK_TIMES;
     uint8_t led_id = 0;
 
+    if (motor_control.state == Control_State_Stall) {
+        Motor_Control_Clear_Stall();
+        led_dev_set_state_by_time(led_id, 
+            LED_ON, time);
+        return;
+    }
+
     switch (motor_control.mode_run) {
     case Motor_Mode_Digital_Location:
     case Motor_Mode_PWM_Location:

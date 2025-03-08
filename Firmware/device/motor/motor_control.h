@@ -231,6 +231,11 @@ void Motor_Control_Write_Goal_Current(int16_t value);	//写入目标电流
 void Motor_Control_Write_Goal_Disable(uint16_t value);//写入目标失能
 void Motor_Control_Write_Goal_Brake(uint16_t value);	//写入目标刹车
 
+bool Motor_Control_Write_Goal_Location_WithTime(int32_t _pos, float _time); //写入目标位置
+float Motor_Control_Read_Goal_Position(bool _is_lap);//读取目标位置
+float Motor_Control_Read_Goal_Speed();//读取目标速度
+float Motor_Control_Read_Goal_FocCurrent();//读取目标电流
+
 //任务执行
 void Motor_Control_Init(void);											//电机控制初始化
 void Motor_Control_Callback(void);									//控制器任务回调
