@@ -47,7 +47,7 @@ extern "C" {
 #endif
 
 //引用端口定义
-// #include "kernel_port.h" // Modify by zhbi98
+/*#include "kernel_port.h", Modify by zhbi98*/
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -231,8 +231,8 @@ void Motor_Control_Write_Goal_Current(int16_t value);	//写入目标电流
 void Motor_Control_Write_Goal_Disable(uint16_t value);//写入目标失能
 void Motor_Control_Write_Goal_Brake(uint16_t value);	//写入目标刹车
 
-bool Motor_Control_Write_Goal_Location_WithTime(int32_t _pos, float _time); //写入目标位置
-float Motor_Control_Read_Goal_Position(bool _is_lap);//读取目标位置
+bool Motor_Control_Write_Goal_Location_WithTime(int32_t pos, float time); //写入目标位置
+float Motor_Control_Read_Goal_Position(bool is_lap);//读取目标位置
 float Motor_Control_Read_Goal_Speed();//读取目标速度
 float Motor_Control_Read_Goal_FocCurrent();//读取目标电流
 

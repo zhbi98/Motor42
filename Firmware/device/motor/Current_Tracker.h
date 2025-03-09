@@ -47,7 +47,7 @@ extern "C" {
 #endif
 
 //引用端口定义
-// #include "kernel_port.h" // Modify by zhbi98
+/*#include "kernel_port.h", Modify by zhbi98*/
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>

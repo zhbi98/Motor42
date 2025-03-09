@@ -31,13 +31,17 @@
  *      TYPEDEFS
  **********************/
 
+/*CAN Tx message header structure definition.*/
 CAN_TxHeaderTypeDef TxHeader = {0};
+/*CAN Rx message header structure definition.*/
 CAN_RxHeaderTypeDef RxHeader = {0};
-uint32_t TxMailbox = 0;
+
+CAN_HandleTypeDef hcan = {0};
+
 uint8_t TxData[8] = {0};
 uint8_t RxData[8] = {0};
 
-CAN_HandleTypeDef hcan = {0};
+uint32_t TxMailbox = 0;
 
 /**********************
  *   GLOBAL FUNCTIONS
@@ -219,7 +223,7 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
   *         This parameter can be a value of @arg CAN_Tx_Mailboxes.
   * @retval HAL status
   */
-void CAN_Send(CAN_TxHeaderTypeDef* pHeader, uint8_t* data)
+void CAN_Send(CAN_TxHeaderTypeDef * pHeader, uint8_t * data)
 {
     if (HAL_CAN_AddTxMessage(&hcan, pHeader, 
         data, &TxMailbox) != HAL_OK)

@@ -14,6 +14,7 @@ extern "C" {
  *      INCLUDES
  *********************/
 
+#include "main.h"
 #include "rom_conf.h"
 #include <stdint.h>
 

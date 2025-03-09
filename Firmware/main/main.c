@@ -29,6 +29,7 @@
 #include "can.h"
 #include "spi.h"
 #include "tim.h"
+#include "setup.h"
 
 /*********************
  *      DEFINES
@@ -52,6 +53,8 @@ int32_t main()
     /* Configure the system clock */
     SystemClock_Config();
     RetargetInit(&huart2);
+
+    read_file();
 
     _enc_dev_init();
     Motor_Control_Init();
@@ -78,6 +81,7 @@ int32_t main()
         _enc_cali_solve();
         led_anim_tick_work();
         btn_doing_tick_work();
+        file_tick_work();
     }
     return 0;
 }

@@ -436,32 +436,37 @@ void Motor_Control_Write_Goal_Brake(uint16_t value)
   * @param  NULL
   * @retval NULL
 **/
-bool Motor_Control_Write_Goal_Location_WithTime(int32_t _pos, float _time)
+bool Motor_Control_Write_Goal_Location_WithTime(int32_t pos, float time)
 {
-    int32_t enc_home_ofs = 0;
-    int32_t deltaPos = abs(_pos - motor_control.real_location + enc_home_ofs);
+	float rated_Acc = ((float)Move_Rated_UpAcc + 
+		(float)Move_Rated_DownAcc) / 2.0f;
 
-    float pMax = (float)Move_Rated_UpAcc * _time * _time / 4;
-    if ((float) deltaPos > pMax)
-    {
-        /*context->config.motionParams.ratedVelocity = boardConfig.velocityLimit;*/
-        Move_Rated_Speed = 30U * Move_Pulse_NUM;
-        Motor_Control_Write_Goal_Location(_pos);
+	float _pos_max = (float)rated_Acc * time * time / 4;
 
-        return false;
-    } else
-    {
-        float vMax = _time * (float)Move_Rated_UpAcc;
-        vMax -= (float)Move_Rated_UpAcc *
-                (sqrtf(_time * _time - 4 * (float)deltaPos /
-                                       (float)Move_Rated_UpAcc));
-        vMax /= 2;
+	int32_t home_ofs = 0;
+  float speed_max = 0.0f;
 
-        Move_Rated_Speed = (int32_t)vMax;
-        Motor_Control_Write_Goal_Location(_pos);
+  int32_t _pos_delta = abs(
+  	pos - motor_control.real_location + home_ofs);
 
-        return true;
-    }
+  if ((float)_pos_delta > _pos_max) {
+  	/*velocityLimit*/
+    Move_Rated_Speed = 30U * Move_Pulse_NUM;
+    Motor_Control_Write_Goal_Location(pos);
+    return false;
+  } else {
+    speed_max = time * (float)rated_Acc;
+
+    speed_max -= (float)rated_Acc * (
+    	sqrtf(time * time - 4 * 
+    		(float)_pos_delta / (float)rated_Acc));
+
+    speed_max /= 2;
+
+    Move_Rated_Speed = (int32_t)speed_max;
+    Motor_Control_Write_Goal_Location(pos);
+    return true;
+  }
 }
 
 /**
@@ -469,16 +474,17 @@ bool Motor_Control_Write_Goal_Location_WithTime(int32_t _pos, float _time)
   * @param  NULL
   * @retval NULL
 **/
-float Motor_Control_Read_Goal_Position(bool _is_lap)
+float Motor_Control_Read_Goal_Position(bool is_lap)
 {
-	int32_t enc_home_ofs = 0;
+	int32_t home_ofs = 0;
 
-  return _is_lap ?
-         (float)(motor_control.real_lap_location - enc_home_ofs) /
-         (float)(Move_Pulse_NUM)
-                :
-         (float)(motor_control.real_location - enc_home_ofs) /
-         (float)(Move_Pulse_NUM);
+	float _p1 = (float)(motor_control.real_lap_location - 
+		home_ofs) / (float)(Move_Pulse_NUM);
+
+	float _p2 = (float)(motor_control.real_location - 
+		home_ofs) / (float)(Move_Pulse_NUM);
+
+  return is_lap ? _p1 : _p2;
 }
 
 /**
@@ -488,7 +494,7 @@ float Motor_Control_Read_Goal_Position(bool _is_lap)
 **/
 float Motor_Control_Read_Goal_Speed()
 {
-    return (float)motor_control.est_speed / (float)Move_Pulse_NUM;
+  return (float)motor_control.est_speed / (float)Move_Pulse_NUM;
 }
 
 /**
@@ -498,7 +504,7 @@ float Motor_Control_Read_Goal_Speed()
 **/
 float Motor_Control_Read_Goal_FocCurrent()
 {
-    return (float)motor_control.foc_current / 1000.f;
+  return (float)motor_control.foc_current / 1000.f;
 }
 
 /**
