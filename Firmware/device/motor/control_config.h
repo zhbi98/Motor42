@@ -58,6 +58,7 @@ extern int32_t Current_Cali_Current;  /**< 校准电流(mA)*/
 #define Move_Divide_NUM ((int32_t)(256))   /**< (每步柔性件控制细分量)*/
 #define Move_Pulse_NUM  ((int32_t)(Move_Step_NUM * Move_Divide_NUM)) /**< (电机单圈脉冲数)*/
 
+extern int32_t Move_Home_Offset;
 extern int32_t Move_Rated_Speed;           /**< (额定转速)(50转每秒)*/
 extern int32_t Move_Rated_UpAcc;           /**< (固件额定加速加速度)(1000r/ss)*/
 extern int32_t Move_Rated_DownAcc;         /**< (固件额定减速加速度)(1000r/ss)*/

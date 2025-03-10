@@ -21,6 +21,7 @@
  *********************/
 
 #include "stm32f1xx_hal.h"
+#include "setup.h"
 #include "can.h"
 
 /*********************
@@ -114,7 +115,7 @@ void x42_can_init()
         CAN_IT_ERROR);
 
     /* Configure Transmission process */
-    TxHeader.StdId = 0x01/*boardConfig.canNodeId*/;
+    TxHeader.StdId = 0x01/*canNodeId*/;
     TxHeader.ExtId = 0x00;
     TxHeader.RTR = CAN_RTR_DATA;
     TxHeader.IDE = CAN_ID_STD;
@@ -261,7 +262,8 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef* hcan)
 
     uint8_t id = (RxHeader.StdId >> 7); // 4Bits ID & 7Bits Msg
     uint8_t cmd = RxHeader.StdId & 0x7F; // 4Bits ID & 7Bits Msg
-    if (id == 0 || id == 0x01/*boardConfig.canNodeId*/)
+    uint8_t canNodeId = _setup.can_id;
+    if (id == 0 || id == canNodeId)
     {
         /*OnCanCmd(cmd, RxData, RxHeader.DLC);*/
         extern void dev_can_cmd(uint8_t _cmd, uint8_t * _data, uint32_t _len);

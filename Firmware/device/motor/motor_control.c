@@ -382,7 +382,7 @@ void Motor_Control_SetDefault(void)
 **/
 void Motor_Control_Write_Goal_Location(int32_t value)
 {
-	motor_control.goal_location = value;
+	motor_control.goal_location = value + Move_Home_Offset;
 }
 	
 /**
@@ -432,6 +432,16 @@ void Motor_Control_Write_Goal_Brake(uint16_t value)
 }
 
 /**
+  * @brief  写入编码器零点偏移, by zhbi98
+  * @param  NULL
+  * @retval NULL
+**/
+void Motor_Control_Write_PosAsHomeOffset()
+{
+  Move_Home_Offset = motor_control.real_location % Move_Pulse_NUM;
+}
+
+/**
   * @brief  写入目标位置, by zhbi98
   * @param  NULL
   * @retval NULL
@@ -443,14 +453,13 @@ bool Motor_Control_Write_Goal_Location_WithTime(int32_t pos, float time)
 
 	float _pos_max = (float)rated_Acc * time * time / 4;
 
-	int32_t home_ofs = 0;
   float speed_max = 0.0f;
 
   int32_t _pos_delta = abs(
-  	pos - motor_control.real_location + home_ofs);
+  	pos - motor_control.real_location + Move_Home_Offset);
 
   if ((float)_pos_delta > _pos_max) {
-  	/*velocityLimit*/
+  	/*velocity Limit*/
     Move_Rated_Speed = 30U * Move_Pulse_NUM;
     Motor_Control_Write_Goal_Location(pos);
     return false;
@@ -461,8 +470,10 @@ bool Motor_Control_Write_Goal_Location_WithTime(int32_t pos, float time)
     	sqrtf(time * time - 4 * 
     		(float)_pos_delta / (float)rated_Acc));
 
-    speed_max /= 2;
+    speed_max /= 2.0f;
 
+    /*Adjust the rated speed of the motor 
+    according to the needs of time*/
     Move_Rated_Speed = (int32_t)speed_max;
     Motor_Control_Write_Goal_Location(pos);
     return true;
@@ -476,13 +487,11 @@ bool Motor_Control_Write_Goal_Location_WithTime(int32_t pos, float time)
 **/
 float Motor_Control_Read_Goal_Position(bool is_lap)
 {
-	int32_t home_ofs = 0;
-
 	float _p1 = (float)(motor_control.real_lap_location - 
-		home_ofs) / (float)(Move_Pulse_NUM);
+		Move_Home_Offset) / (float)(Move_Pulse_NUM);
 
 	float _p2 = (float)(motor_control.real_location - 
-		home_ofs) / (float)(Move_Pulse_NUM);
+		Move_Home_Offset) / (float)(Move_Pulse_NUM);
 
   return is_lap ? _p1 : _p2;
 }
@@ -533,7 +542,7 @@ void Motor_Control_Init(void)
 	motor_control.est_location = 0;
 	motor_control.est_error = 0;
 	//硬目标
-	motor_control.goal_location = 0;
+	motor_control.goal_location = 0 + Move_Home_Offset;
 	motor_control.goal_speed = 0;
 	motor_control.goal_current = 0;
 	motor_control.goal_disable = false;
@@ -579,12 +588,25 @@ extern _angle_t _angle;
 **/
 void Motor_Control_Callback(void)
 {
-    if (cali._start) return;
+  if (cali._start) return;
 	/************************************ 首次进入控制回调 ************************************/
 	/************************************ 首次进入控制回调 ************************************/
 	static bool first_call = true;
 	if(first_call)
 	{
+		/*增加 HomeOffset 是为了调节电机零点，便于因适配结构需要调节机械臂关节零点位置, by zhbi98*/
+		if (Move_Home_Offset < Move_Pulse_NUM / 2) {
+			_angle.rectified = _angle.rectified >
+				Move_Home_Offset + Move_Pulse_NUM / 2 ?
+				_angle.rectified - Move_Pulse_NUM :
+				_angle.rectified;
+		} else {
+			_angle.rectified = _angle.rectified <
+				Move_Home_Offset - Move_Pulse_NUM / 2 ?
+				_angle.rectified + Move_Pulse_NUM :
+				_angle.rectified;
+		}
+
 		//读取(为了方便将XDrive代码移植到软件编码器,将位置读取初始化部分全部放置在此处运行)
 		motor_control.real_lap_location				= _angle.rectified;
 		motor_control.real_lap_location_last	= _angle.rectified;

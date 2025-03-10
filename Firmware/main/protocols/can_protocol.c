@@ -52,6 +52,7 @@ extern _cali_attr_t cali;
  */
 void dev_can_cmd(uint8_t _cmd, uint8_t * _data, uint32_t _len)
 {
+    uint8_t canNodeId = _setup.can_id;
     float _float_val = 0.0f;
     int32_t _int_val = 0U;
 
@@ -92,7 +93,7 @@ void dev_can_cmd(uint8_t _cmd, uint8_t * _data, uint32_t _len)
             for (int8_t i = 0; i < 4; i++)
                 _data[i] = *(bin + i);
             _data[4] = motor_control.state == Control_State_Finish ? 1 : 0;
-            txHeader.StdId = (0x01/*canNodeId*/ << 7) | 0x23;
+            txHeader.StdId = (canNodeId << 7) | 0x23;
             CAN_Send(&txHeader, _data);
         }
     }
@@ -110,7 +111,7 @@ void dev_can_cmd(uint8_t _cmd, uint8_t * _data, uint32_t _len)
             for (int8_t i = 0; i < 4; i++)
                 _data[i] = *(bin + i);
             _data[4] = motor_control.state == Control_State_Finish ? 1 : 0;
-            txHeader.StdId = (0x01/*canNodeId*/ << 7) | 0x23;
+            txHeader.StdId = (canNodeId << 7) | 0x23;
             CAN_Send(&txHeader, _data);
         }
     }
@@ -131,7 +132,7 @@ void dev_can_cmd(uint8_t _cmd, uint8_t * _data, uint32_t _len)
         for (int8_t i = 0; i < 4; i++)
             _data[i] = *(bin + i);
         _data[4] = motor_control.state == Control_State_Finish ? 1 : 0;
-        txHeader.StdId = (0x01/*canNodeId*/ << 7) | 0x23;
+        txHeader.StdId = (canNodeId << 7) | 0x23;
         CAN_Send(&txHeader, _data);
     }
         break;
@@ -146,7 +147,7 @@ void dev_can_cmd(uint8_t _cmd, uint8_t * _data, uint32_t _len)
         break;
     case 0x12: /*Set Current-Limit and Store to EEPROM*/
         Current_Rated_Current = (int32_t)(*(float *)RxData * 1000);
-        _setup.current_limit = Current_Rated_Current;
+        _setup.current_rated = Current_Rated_Current;
         if (_data[4]) {
             operate_file(0);
         }
@@ -154,7 +155,7 @@ void dev_can_cmd(uint8_t _cmd, uint8_t * _data, uint32_t _len)
     case 0x13: /*Set Velocity-Limit and Store to EEPROM*/
         Move_Rated_Speed = (int32_t)(*(float *)RxData *
                        (float)Move_Pulse_NUM);
-        _setup.speed_limit = Move_Rated_Speed;
+        _setup.speed_rated = Move_Rated_Speed;
         if (_data[4]) {
             operate_file(0);
         }
@@ -170,15 +171,15 @@ void dev_can_cmd(uint8_t _cmd, uint8_t * _data, uint32_t _len)
         Location_Tracker_Set_UpAcc((int32_t)_float_val);
         Location_Tracker_Set_DownAcc((int32_t)_float_val);
 
-        _setup.speed_acc = Move_Rated_UpAcc;
+        _setup.speed_up_acc = Move_Rated_UpAcc;
+        _setup.speed_down_acc = Move_Rated_DownAcc;
         if (_data[4]) {
             operate_file(0);
         }
         break;
     case 0x15: /*Apply Home-Position and Store to EEPROM*/
-        /*motor.controller->ApplyPosAsHomeOffset();*/
-        /*_setup.encoderHomeOffset = motor.config.motionParams.encoderHomeOffset %*/
-                                        /*Move_Pulse_NUM;*/
+        Motor_Control_Write_PosAsHomeOffset();
+        _setup.home_ofs = Move_Home_Offset % Move_Pulse_NUM;
         operate_file(0);
         break;
     case 0x16: /*Set Auto-Enable and Store to EEPROM*/
@@ -233,7 +234,7 @@ void dev_can_cmd(uint8_t _cmd, uint8_t * _data, uint32_t _len)
             _data[i] = *(bin + i);
         _data[4] = (motor_control.state == Control_State_Finish ? 1 : 0);
 
-        txHeader.StdId = (0x01/*canNodeId*/ << 7) | 0x21;
+        txHeader.StdId = (canNodeId << 7) | 0x21;
         CAN_Send(&txHeader, _data);
     }
         break;
@@ -245,7 +246,7 @@ void dev_can_cmd(uint8_t _cmd, uint8_t * _data, uint32_t _len)
             _data[i] = *(bin + i);
         _data[4] = (motor_control.state == Control_State_Finish ? 1 : 0);
 
-        txHeader.StdId = (0x01/*canNodeId*/ << 7) | 0x22;
+        txHeader.StdId = (canNodeId << 7) | 0x22;
         CAN_Send(&txHeader, _data);
     }
         break;
@@ -257,7 +258,7 @@ void dev_can_cmd(uint8_t _cmd, uint8_t * _data, uint32_t _len)
             _data[i] = *(bin + i);
         /*Finished ACK*/
         _data[4] = motor_control.state == Control_State_Finish ? 1 : 0;
-        txHeader.StdId = (0x01/*canNodeId*/ << 7) | 0x23;
+        txHeader.StdId = (canNodeId << 7) | 0x23;
         CAN_Send(&txHeader, _data);
     }
         break;
@@ -267,7 +268,7 @@ void dev_can_cmd(uint8_t _cmd, uint8_t * _data, uint32_t _len)
         uint8_t * bin = (uint8_t *)&_int_val;
         for (int i = 0; i < 4; i++)
             _data[i] = *(bin + i);
-        txHeader.StdId = (0x01/*canNodeId*/ << 7) | 0x24;
+        txHeader.StdId = (canNodeId << 7) | 0x24;
         CAN_Send(&txHeader, _data);
     }
         break;

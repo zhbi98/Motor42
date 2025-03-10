@@ -42,9 +42,10 @@
 //Oneself
 #include "control_config.h"
 
-int32_t Current_Rated_Current = (3000); /**< 额定电流(mA)*/
-int32_t Current_Cali_Current  = (2000); /**< 校准电流(mA)*/
+int32_t Current_Rated_Current = ((int32_t)(3000)); /**< 额定电流(mA)*/
+int32_t Current_Cali_Current  = ((int32_t)(2000)); /**< 校准电流(mA)*/
 
+int32_t Move_Home_Offset = ((int32_t)(0));
 int32_t Move_Rated_Speed = ((int32_t)(50 * Move_Pulse_NUM));     /**< (额定转速)(50转每秒)*/
 int32_t Move_Rated_UpAcc = ((int32_t)(1000 * Move_Pulse_NUM));   /**< (固件额定加速加速度)(1000r/ss)*/
 int32_t Move_Rated_DownAcc = ((int32_t)(1000 * Move_Pulse_NUM)); /**< (固件额定减速加速度)(1000r/ss)*/

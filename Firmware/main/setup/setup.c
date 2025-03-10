@@ -1,5 +1,5 @@
 /**
- * @file ctrl.c
+ * @file setup.c
  *
  */
 
@@ -9,7 +9,6 @@
 
 #include "control_config.h"
 #include "motor_control.h"
-#include <stdbool.h>
 #include <string.h>
 #include "romf103cb.h"
 #include "setup.h"
@@ -29,14 +28,21 @@ const _setup_t _setup_def = {
     .can_id = 0x01,
     .home_ofs = 0,
     .modedef = Motor_Mode_Digital_Location,
-    .speed_limit = 30 * Move_Pulse_NUM,
-    .speed_acc = 100 * Move_Pulse_NUM,
-    .current_limit = 1000,
+
+    .speed_down_acc = 100 * Move_Pulse_NUM,
+    .speed_up_acc = 100 * Move_Pulse_NUM,
+    .speed_rated = 30 * Move_Pulse_NUM,
+
+    .current_down_acc = 20 * 3000,
+    .current_up_acc = 20 * 3000,
+    .current_rated = 1000,
     .cali_current = 2000,
+
     .dce_kp = 200,
     .dce_kv = 80,
     .dce_ki = 300,
     .dce_kd = 250,
+
     .motor_onboot = false,
     .stall_protect = false,
 

@@ -1,5 +1,5 @@
 /**
- * @file ctrl.h
+ * @file setup.h
  *
  */
 
@@ -10,6 +10,7 @@
  *      INCLUDES
  *********************/
 
+#include <stdbool.h>
 #include <stdint.h>
 
 /*********************
@@ -22,17 +23,25 @@
 
 typedef struct {
     uint8_t head[5 + 1];
-    uint32_t can_id;
-    uint32_t modedef;
-    int32_t home_ofs;
-    int32_t speed_limit;
-    int32_t speed_acc;
-    int32_t cali_current;
-    int32_t current_limit;
+    int32_t current_down_acc;
+    int32_t current_up_acc;
+    int32_t current_rated;
+
+    int32_t speed_down_acc;
+    int32_t speed_up_acc;
+    int32_t speed_rated;
+
     int32_t dce_kp;
     int32_t dce_kv;
     int32_t dce_ki;
     int32_t dce_kd;
+
+    int32_t cali_current;
+
+    uint32_t can_id;
+    uint32_t modedef;
+    int32_t home_ofs;
+
     bool motor_onboot;
     bool stall_protect;
     uint8_t ssid[8 + 1];

@@ -12,6 +12,9 @@
 #include "main.h"
 
 #include "motor_control.h"
+#include "Location_Tracker.h"
+#include "Speed_Tracker.h"
+#include "Current_Tracker.h"
 #include "retarget.h"
 #include "time.h"
 #include "log.h"
@@ -54,8 +57,6 @@ int32_t main()
     SystemClock_Config();
     RetargetInit(&huart2);
 
-    read_file();
-
     _enc_dev_init();
     Motor_Control_Init();
 
@@ -74,6 +75,30 @@ int32_t main()
 
     led_anim_start();
     btn_doing_start();
+
+    read_file();
+
+    Move_Home_Offset = _setup.home_ofs;
+    Move_Rated_Speed = _setup.speed_rated;
+    Move_Rated_UpAcc = _setup.speed_up_acc;
+    Move_Rated_DownAcc = _setup.speed_down_acc;
+
+    Motor_Control_SetStallSwitch(_setup.stall_protect);
+    Speed_Tracker_Set_UpAcc(_setup.speed_up_acc);
+    Speed_Tracker_Set_DownAcc(_setup.speed_down_acc);
+    Location_Tracker_Set_UpAcc(_setup.speed_up_acc);
+    Location_Tracker_Set_DownAcc(_setup.speed_down_acc);
+
+    Current_Rated_Current = _setup.current_rated;
+    Move_Rated_UpCurrentRate = _setup.current_up_acc;
+    Move_Rated_DownCurrentRate = _setup.current_down_acc;
+
+    /*Extract the saved settings and 
+    apply them to the motor drive*/
+    dce.kp = _setup.dce_kp;
+    dce.kv = _setup.dce_kv;
+    dce.ki = _setup.dce_ki;
+    dce.kd = _setup.dce_kd;
 
     for (;;) {
         /* Insert delay 100 ms */
