@@ -183,7 +183,7 @@ void dev_can_cmd(uint8_t _cmd, uint8_t * _data, uint32_t _len)
         operate_file(0);
         break;
     case 0x16: /*Set Auto-Enable and Store to EEPROM*/
-        _setup.motor_onboot = (*(uint32_t*) (RxData) == 1);
+        _setup.motor_onboot = (*(uint32_t *)(RxData) == 1);
         if (_data[4]) {
             operate_file(0);
         }
@@ -264,7 +264,7 @@ void dev_can_cmd(uint8_t _cmd, uint8_t * _data, uint32_t _len)
         break;
     case 0x24: /*Get Offset*/
     {
-        _int_val = 0/*encoderHomeOffset*/;
+        _int_val = Move_Home_Offset;
         uint8_t * bin = (uint8_t *)&_int_val;
         for (int i = 0; i < 4; i++)
             _data[i] = *(bin + i);

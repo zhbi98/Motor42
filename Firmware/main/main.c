@@ -58,7 +58,6 @@ int32_t main()
     RetargetInit(&huart2);
 
     _enc_dev_init();
-    Motor_Control_Init();
 
     /* Initialize all configured peripherals */
     x42_gpio_init();
@@ -88,6 +87,7 @@ int32_t main()
     Speed_Tracker_Set_DownAcc(_setup.speed_down_acc);
     Location_Tracker_Set_UpAcc(_setup.speed_up_acc);
     Location_Tracker_Set_DownAcc(_setup.speed_down_acc);
+    Motor_Control_Init();
 
     Current_Rated_Current = _setup.current_rated;
     Move_Rated_UpCurrentRate = _setup.current_up_acc;

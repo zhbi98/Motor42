@@ -42,15 +42,15 @@
 //Oneself
 #include "control_config.h"
 
-int32_t Current_Rated_Current = ((int32_t)(3000)); /**< 额定电流(mA)*/
-int32_t Current_Cali_Current  = ((int32_t)(2000)); /**< 校准电流(mA)*/
+int32_t Current_Rated_Current = _Current_Rated_Current; /**< 额定电流(mA)*/
+int32_t Current_Cali_Current  = _Current_Cali_Current;  /**< 校准电流(mA)*/
 
 int32_t Move_Home_Offset = ((int32_t)(0));
-int32_t Move_Rated_Speed = ((int32_t)(50 * Move_Pulse_NUM));     /**< (额定转速)(50转每秒)*/
-int32_t Move_Rated_UpAcc = ((int32_t)(1000 * Move_Pulse_NUM));   /**< (固件额定加速加速度)(1000r/ss)*/
-int32_t Move_Rated_DownAcc = ((int32_t)(1000 * Move_Pulse_NUM)); /**< (固件额定减速加速度)(1000r/ss)*/
-int32_t Move_Rated_UpCurrentRate = ((int32_t)(20 * 3000/*Current_Rated_Current*/));   /**< (固件额定增流梯度)(20倍额定/s)*/
-int32_t Move_Rated_DownCurrentRate = ((int32_t)(20 * 3000/*Current_Rated_Current*/)); /**< (固件额定减流梯度)(20倍额定/s)*/
+int32_t Move_Rated_Speed = _Move_Rated_Speed;                     /**< (额定转速)(50转每秒)*/
+int32_t Move_Rated_UpAcc = _Move_Rated_UpAcc;                     /**< (固件额定加速加速度)(1000r/ss)*/
+int32_t Move_Rated_DownAcc = _Move_Rated_DownAcc;                 /**< (固件额定减速加速度)(1000r/ss)*/
+int32_t Move_Rated_UpCurrentRate = _Move_Rated_UpCurrentRate;     /**< (固件额定增流梯度)(20倍额定/s)*/
+int32_t Move_Rated_DownCurrentRate = _Move_Rated_DownCurrentRate; /**< (固件额定减流梯度)(20倍额定/s)*/
 
 /**
  * @brief  控制静态配置

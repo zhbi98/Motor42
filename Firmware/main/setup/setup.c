@@ -33,8 +33,8 @@ const _setup_t _setup_def = {
     .speed_up_acc = 100 * Move_Pulse_NUM,
     .speed_rated = 30 * Move_Pulse_NUM,
 
-    .current_down_acc = 20 * 3000,
-    .current_up_acc = 20 * 3000,
+    .current_down_acc = 2 * 1000, /*(mA/s)*/
+    .current_up_acc = 2 * 1000, /*(mA/s)*/
     .current_rated = 1000,
     .cali_current = 2000,
 

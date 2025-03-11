@@ -7,14 +7,15 @@
  *      INCLUDES
  *********************/
 
+#include <stddef.h>
+#include "control_config.h"
 #include "motor_control.h"
 #include "multi_button.h"
-#include <stddef.h>
 #include "btn_doing.h"
 #include "gpio.h"
 #include "ledmx.h"
-#include "control_config.h"
 #include "enc_cali.h"
+#include "setup.h"
 
 /*********************
  *      DEFINES
@@ -34,7 +35,7 @@ static void _motor_btn2_click();
  *  STATIC VARIABLES
  **********************/
 
-static Motor_Mode modedef = Motor_Mode_Digital_Location;
+static Motor_Mode _mode = Control_Mode_Stop;
 static volatile uint32_t _btn_tick = 0;
 static struct Button btn1 = {0};
 static struct Button btn2 = {0};
@@ -76,11 +77,14 @@ static void _motor_btn1_click()
     Motor_Mode * _req_p = \
         &motor_control.mode_order;
 
+    if (_mode == Control_Mode_Stop)
+        _mode = _setup.modedef;
+
     /*Operation Control mode of reset motor*/
     if (*_run_p != Control_Mode_Stop) {
-        modedef = *_run_p;
+        _mode = *_run_p;
         *_req_p = Control_Mode_Stop;
-    } else *_req_p = modedef;
+    } else *_req_p = _mode;
 
     led_dev_set_state_by_time(led_id, 
         LED_ON, time);
