@@ -178,6 +178,7 @@ void dev_can_cmd(uint8_t _cmd, uint8_t * _data, uint32_t _len)
         }
         break;
     case 0x15: /*Apply Home-Position and Store to EEPROM*/
+        /*Obtain the current location and mark the location as the home zero point.*/
         Motor_Control_Write_PosAsHomeOffset();
         _setup.home_ofs = Move_Home_Offset % Move_Pulse_NUM;
         operate_file(0);
