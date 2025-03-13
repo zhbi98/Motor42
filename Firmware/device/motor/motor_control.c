@@ -662,7 +662,7 @@ void Motor_Control_Callback(void)
 	else if(
 		 (motor_control.stall_flag)			//堵转标志置位
 	|| (motor_control.soft_disable)		//软目标_失能指令
-	/*|| ((!_angle.rectify_valid))*/			//编码器校准表无效
+	|| ((!_angle.rectify_valid))			//编码器校准表无效
 	){
 		Motor_Control_Clear_Integral();		//清除积分
 		motor_control.foc_location = 0;		//清FOC位置

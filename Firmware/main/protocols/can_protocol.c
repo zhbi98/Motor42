@@ -141,14 +141,14 @@ void dev_can_cmd(uint8_t _cmd, uint8_t * _data, uint32_t _len)
     /*0x10~0x1F CMDs with Memory*/
     case 0x11: /*Set Node-ID and Store to EEPROM*/
         _setup.can_id = *(uint32_t*)(RxData);
-        if (_data[4]) {
+        if (_data[4]) { /*It need to be stored*/
             operate_file(0);
         }
         break;
     case 0x12: /*Set Current-Limit and Store to EEPROM*/
         Current_Rated_Current = (int32_t)(*(float *)RxData * 1000);
         _setup.current_rated = Current_Rated_Current;
-        if (_data[4]) {
+        if (_data[4]) { /*It need to be stored*/
             operate_file(0);
         }
         break;
@@ -156,7 +156,7 @@ void dev_can_cmd(uint8_t _cmd, uint8_t * _data, uint32_t _len)
         Move_Rated_Speed = (int32_t)(*(float *)RxData *
                        (float)Move_Pulse_NUM);
         _setup.speed_rated = Move_Rated_Speed;
-        if (_data[4]) {
+        if (_data[4]) { /*It need to be stored*/
             operate_file(0);
         }
         break;
@@ -173,7 +173,7 @@ void dev_can_cmd(uint8_t _cmd, uint8_t * _data, uint32_t _len)
 
         _setup.speed_up_acc = Move_Rated_UpAcc;
         _setup.speed_down_acc = Move_Rated_DownAcc;
-        if (_data[4]) {
+        if (_data[4]) { /*It need to be stored*/
             operate_file(0);
         }
         break;
@@ -185,42 +185,42 @@ void dev_can_cmd(uint8_t _cmd, uint8_t * _data, uint32_t _len)
         break;
     case 0x16: /*Set Auto-Enable and Store to EEPROM*/
         _setup.motor_onboot = (*(uint32_t *)(RxData) == 1);
-        if (_data[4]) {
+        if (_data[4]) { /*It need to be stored*/
             operate_file(0);
         }
         break;
     case 0x17: /*Set DCE Kp*/
         dce.kp = *(int32_t *)(RxData);
         _setup.dce_kp = dce.kp;
-        if (_data[4]) {
+        if (_data[4]) { /*It need to be stored*/
             operate_file(0);
         }
         break;
     case 0x18: /*Set DCE Kv*/
         dce.kv = *(int32_t *)(RxData);
         _setup.dce_kv = dce.kv;
-        if (_data[4]) {
+        if (_data[4]) { /*It need to be stored*/
             operate_file(0);
         }
         break;
     case 0x19: /*Set DCE Ki*/
         dce.ki = *(int32_t *)(RxData);
         _setup.dce_ki = dce.ki;
-        if (_data[4]) {
+        if (_data[4]) { /*It need to be stored*/
             operate_file(0);
         }
         break;
     case 0x1A: /*Set DCE Kd*/
         dce.kd = *(int32_t *)(RxData);
         _setup.dce_kd = dce.kd;
-        if (_data[4]) {
+        if (_data[4]) { /*It need to be stored*/
             operate_file(0);
         }
         break;
     case 0x1B: /*Set Enable Stall-Protect*/
         Motor_Control_SetStallSwitch((*(uint32_t *)(RxData) == 1));
         _setup.stall_protect = (*(uint32_t*)(RxData) == 1);
-        if (_data[4]) {
+        if (_data[4]) { /*It need to be stored*/
             operate_file(0);
         }
         break;
