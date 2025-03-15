@@ -32,6 +32,8 @@
 #include "can.h"
 #include "spi.h"
 #include "tim.h"
+#include "adc.h"
+#include "dma.h"
 #include "setup.h"
 
 /*********************
@@ -68,9 +70,9 @@ int32_t main()
 
     x42_TIM4_init();
     x42_TIM2_init();
-
-    HAL_Delay(100);
-    HAL_TIM_Base_Start_IT(&htim2);
+    x42_TIM1_Init();
+    x42_dma_init();
+    x42_adc1_init();
 
     led_anim_start();
     btn_doing_start();
@@ -100,6 +102,11 @@ int32_t main()
     dce.ki = _setup.dce_ki;
     dce.kd = _setup.dce_kd;
 
+    HAL_Delay(100);
+    /*Start close loop control tick work*/
+    HAL_TIM_Base_Start_IT(&htim1);
+    HAL_TIM_Base_Start_IT(&htim2);
+
     for (;;) {
         /* Insert delay 100 ms */
         led_dev_task_handler();
@@ -119,7 +126,7 @@ extern _cali_attr_t cali;
  * turn right turn in the process to collect 
  * and store encoder output values.
  */
-void _TIM2_callback_20khz()
+void _TIM2_callback_20kHz()
 {
     __HAL_TIM_CLEAR_IT(&htim2, TIM_IT_UPDATE);
 
@@ -128,13 +135,31 @@ void _TIM2_callback_20khz()
     if (cali._start) _enc_cali_tick_work();
     else Motor_Control_Callback();
 
-    led_anim_tick_inc(1);
-    btn_doing_tick_inc(1);
+    /*led_anim_tick_inc(1);*/
+    /*btn_doing_tick_inc(1);*/
 
     /*if (encoderCalibrator.isTriggered)*/
     /*    encoderCalibrator.Tick20kHz();*/
     /*else motor.Tick20kHz();*/
 
+}
+
+/**
+ * Magnetic encoder calibration, data acquisition program, 
+ * open-loop state control motor turns left once, 
+ * turn right turn in the process to collect 
+ * and store encoder output values.
+ */
+void _TIM1_callback_100Hz()
+{
+    __HAL_TIM_CLEAR_IT(&htim1, TIM_IT_UPDATE);
+
+    led_anim_tick_inc(20);
+    btn_doing_tick_inc(100);
+
+    /*if (encoderCalibrator.isTriggered)*/
+    /*    encoderCalibrator.Tick20kHz();*/
+    /*else motor.Tick20kHz();*/
 }
 
 /**

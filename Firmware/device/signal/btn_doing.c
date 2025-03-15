@@ -52,8 +52,8 @@ static struct Button btn2 = {0};
 static uint8_t _read_driver(uint8_t btn_id)
 {
     switch (btn_id) {
-    case 0: return HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_14); break;
-    case 1: return HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_15); break;
+    case 0: return HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_4); break;
+    case 1: return HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_3); break;
     default: return 0; break;
     }
 

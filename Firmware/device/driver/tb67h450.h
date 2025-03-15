@@ -27,10 +27,10 @@
 #define TB_AP_L() (GPIOB->BRR  = GPIO_PIN_10)
 #define TB_AM_H() (GPIOB->BSRR = GPIO_PIN_11)
 #define TB_AM_L() (GPIOB->BRR  = GPIO_PIN_11)
-#define TB_BP_H() (GPIOB->BSRR = GPIO_PIN_12)
-#define TB_BP_L() (GPIOB->BRR  = GPIO_PIN_12)
-#define TB_BM_H() (GPIOB->BSRR = GPIO_PIN_13)
-#define TB_BM_L() (GPIOB->BRR  = GPIO_PIN_13)
+#define TB_BP_H() (GPIOB->BSRR = GPIO_PIN_0)
+#define TB_BP_L() (GPIOB->BRR  = GPIO_PIN_0)
+#define TB_BM_H() (GPIOB->BSRR = GPIO_PIN_1)
+#define TB_BM_L() (GPIOB->BRR  = GPIO_PIN_1)
 
 /**********************
  *      TYPEDEFS

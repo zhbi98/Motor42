@@ -48,7 +48,7 @@ void x42_gpio_init()
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_RESET);
 
     /*Configure GPIO pin : LED 0*/
-    GPIO_InitStruct.Pin = GPIO_PIN_0;
+    GPIO_InitStruct.Pin = GPIO_PIN_12;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
@@ -62,18 +62,25 @@ void x42_gpio_init()
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
     /*Configure GPIO pin : KEY 0*/
-    GPIO_InitStruct.Pin = GPIO_PIN_14;
+    GPIO_InitStruct.Pin = GPIO_PIN_4;
     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+    /*Enable the Serial wire JTAG configuration
+    NOJTAG: JTAG-DP Disabled and SW-DP Enabled*/
+    __HAL_RCC_AFIO_CLK_ENABLE();
+    __HAL_AFIO_REMAP_SWJ_NOJTAG();
+
+    /*PB3 is used for Jlink JTDO purposes*/
 
     /*Configure GPIO pin : KEY 1*/
-    GPIO_InitStruct.Pin = GPIO_PIN_15;
+    GPIO_InitStruct.Pin = GPIO_PIN_3;
     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
     /*Configure GPIO pin : RS485 Receive Enable Pin*/
     GPIO_InitStruct.Pin = GPIO_PIN_8;
@@ -113,14 +120,14 @@ void x42_gpio_init()
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
     /*Configure GPIO pin : TB67 Bm Pin*/
-    GPIO_InitStruct.Pin = GPIO_PIN_13;
+    GPIO_InitStruct.Pin = GPIO_PIN_1;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
     /*Configure GPIO pin : TB67 Bp Pin*/
-    GPIO_InitStruct.Pin = GPIO_PIN_12;
+    GPIO_InitStruct.Pin = GPIO_PIN_0;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;

@@ -17,7 +17,8 @@
  **********************/
 
 void SystemClock_Config();
-void _TIM2_callback_20khz();
+void _TIM2_callback_20kHz();
+void _TIM1_callback_100Hz();
 void Error_Handler();
 
 #endif /*__MAIN_H__*/

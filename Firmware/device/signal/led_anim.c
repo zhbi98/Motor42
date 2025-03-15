@@ -53,10 +53,10 @@ static void _driver_refer(uint8_t state)
 {
     if (state) {
         HAL_GPIO_WritePin(GPIOB, 
-            GPIO_PIN_0, GPIO_PIN_SET);
+            GPIO_PIN_12, GPIO_PIN_SET);
     } else {
         HAL_GPIO_WritePin(GPIOB, 
-            GPIO_PIN_0, GPIO_PIN_RESET);
+            GPIO_PIN_12, GPIO_PIN_RESET);
     }
 }
 
@@ -103,7 +103,7 @@ void led_anim_tick_inc(uint32_t tick_period)
 
     if (_tick - _last_tick > 20) {
         _last_tick = _led_tick;
-        led_dev_tick_inc(1); 
+        led_dev_tick_inc(10); 
     }
 }
 

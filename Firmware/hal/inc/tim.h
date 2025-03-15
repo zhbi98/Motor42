@@ -18,6 +18,7 @@
 
 extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim2;
+extern TIM_HandleTypeDef htim1;
 
 /**********************
  * GLOBAL PROTOTYPES
@@ -25,5 +26,6 @@ extern TIM_HandleTypeDef htim2;
 
 void x42_TIM4_init();
 void x42_TIM2_init();
+void x42_TIM1_Init();
 
 #endif
