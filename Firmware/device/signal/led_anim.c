@@ -103,7 +103,7 @@ void led_anim_tick_inc(uint32_t tick_period)
 
     if (_tick - _last_tick > 20) {
         _last_tick = _led_tick;
-        led_dev_tick_inc(10); 
+        led_dev_tick_inc(1); 
     }
 }
 

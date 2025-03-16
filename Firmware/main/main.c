@@ -20,6 +20,7 @@
 #include "log.h"
 #include "ftos.h"
 
+#include "MultiTimer.h"
 #include "enc_cali.h"
 #include "mt6816.h"
 #include "tb67h450.h"
@@ -41,8 +42,39 @@
  *********************/
 
 /**********************
+ *  STATIC VARIABLES
+ **********************/
+
+static volatile uint64_t _tim_tick = 0;
+static MultiTimer _TIM_100Hz = {0};
+
+/**********************
+ *  STATIC PROTOTYPES
+ **********************/
+
+static void _TIM_callback_100Hz(MultiTimer * timer, void * userData);
+
+/**********************
  *   GLOBAL FUNCTIONS
  **********************/
+
+/**
+ * Each task callback function is timed and used to 
+ * execute the corresponding callback function at the end of time.
+ */
+static void tim_task_tick_inc(uint32_t tick_period)
+{
+    _tim_tick += tick_period;
+}
+
+/**
+ * Each task callback function is timed and used to 
+ * execute the corresponding callback function at the end of time.
+ */
+static uint64_t tim_task_get_tick()
+{
+    return _tim_tick;
+}
 
 /**
  * Magnetic encoder calibration, data acquisition program, 
@@ -74,6 +106,8 @@ int32_t main()
     x42_dma_init();
     x42_adc1_init();
 
+    multiTimerInstall(tim_task_get_tick);
+    multiTimerStart(&_TIM_100Hz, 100, _TIM_callback_100Hz, NULL); /**5 ms repeating*/
     led_anim_start();
     btn_doing_start();
 
@@ -104,15 +138,18 @@ int32_t main()
 
     HAL_Delay(100);
     /*Start close loop control tick work*/
-    HAL_TIM_Base_Start_IT(&htim1);
     HAL_TIM_Base_Start_IT(&htim2);
+
+    /*The scheduled interrupt can only be started 
+    in the final stage of initialization to avoid 
+    interrupting the initialization work*/
 
     for (;;) {
         /* Insert delay 100 ms */
-        led_dev_task_handler();
+        /*led_dev_task_handler();*/
         _enc_cali_solve();
-        led_anim_tick_work();
-        btn_doing_tick_work();
+        /*led_anim_tick_work();*/
+        /*btn_doing_tick_work();*/
         file_tick_work();
     }
     return 0;
@@ -134,9 +171,11 @@ void _TIM2_callback_20kHz()
 
     if (cali._start) _enc_cali_tick_work();
     else Motor_Control_Callback();
+    multiTimerYield();
 
-    /*led_anim_tick_inc(1);*/
-    /*btn_doing_tick_inc(1);*/
+    led_anim_tick_inc(1);
+    btn_doing_tick_inc(1);
+    tim_task_tick_inc(1);
 
     /*if (encoderCalibrator.isTriggered)*/
     /*    encoderCalibrator.Tick20kHz();*/
@@ -153,13 +192,21 @@ void _TIM2_callback_20kHz()
 void _TIM1_callback_100Hz()
 {
     __HAL_TIM_CLEAR_IT(&htim1, TIM_IT_UPDATE);
+}
 
-    led_anim_tick_inc(20);
-    btn_doing_tick_inc(100);
+/**
+ * Magnetic encoder calibration, data acquisition program, 
+ * open-loop state control motor turns left once, 
+ * turn right turn in the process to collect 
+ * and store encoder output values.
+ */
+static void _TIM_callback_100Hz(MultiTimer * timer, void * userData)
+{
+    led_dev_task_handler();
+    led_anim_tick_work();
+    btn_doing_tick_work();
 
-    /*if (encoderCalibrator.isTriggered)*/
-    /*    encoderCalibrator.Tick20kHz();*/
-    /*else motor.Tick20kHz();*/
+    multiTimerStart(timer, 100, _TIM_callback_100Hz, NULL);
 }
 
 /**

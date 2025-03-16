@@ -62,6 +62,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/utils/
     ${CMAKE_SOURCE_DIR}/utils/mem
     ${CMAKE_SOURCE_DIR}/utils/modbus
+    ${CMAKE_SOURCE_DIR}/utils/MultiTimer
 )
 add_definitions(-DUSE_HAL_DRIVER -D__MICROLIB -DSTM32F1 -DSTM32F1xx -DSTM32F103xB)
 
@@ -80,6 +81,7 @@ aux_source_directory(${CMAKE_SOURCE_DIR}/main/setup SETUP)
 aux_source_directory(${CMAKE_SOURCE_DIR}/utils UTILS)
 aux_source_directory(${CMAKE_SOURCE_DIR}/utils/mem MEM)
 aux_source_directory(${CMAKE_SOURCE_DIR}/utils/modbus MODBUS)
+aux_source_directory(${CMAKE_SOURCE_DIR}/utils/MultiTimer MULTITIMER)
 
 set(STARTUP       ${CMAKE_SOURCE_DIR}/drivers/CMSIS/Device/ST/STM32F1xx/Source/Templates/gcc/startup_stm32f103xb.s)
 set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/drivers/CMSIS/Device/ST/STM32F1xx/Source/Templates/gcc/linker/STM32F103XB_FLASH.ld)
@@ -90,8 +92,13 @@ add_link_options(-T ${LINKER_SCRIPT})
 
 add_executable(${PROJECT_NAME}.elf 
     ${HAL_DRIVER} ${SYSTEM} ${DRIVER} 
-    ${ENCODER} ${MOTOR} ${SIGNAL} ${LEDMX} ${BUTTON} ${DEVHAL} ${MAIN} ${PROTOCOLS} ${SETUP} ${UTILS} ${MEM} ${MODBUS} 
-    ${STARTUP} ${LINKER_SCRIPT})
+    ${ENCODER} ${MOTOR} 
+    ${SIGNAL} ${LEDMX} ${BUTTON} 
+    ${DEVHAL} 
+    ${MAIN} ${PROTOCOLS} ${SETUP} 
+    ${UTILS} ${MEM} ${MODBUS} ${MULTITIMER} 
+    ${STARTUP} ${LINKER_SCRIPT}
+)
 
 set(HEX_FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.hex)
 set(BIN_FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.bin)
