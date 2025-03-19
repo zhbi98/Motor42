@@ -157,7 +157,7 @@ void Location_Tracker_Init()
 **/
 void Location_Tracker_NewTask(int32_t real_location, int32_t real_speed)
 {
-	//更新计算过程数据
+	//更新计算过程（Course）数据
 	location_tck.course_acc_integral = 0;			//过程加速度积分
 	location_tck.course_speed = real_speed;			//过程速度
 	location_tck.course_speed_integral = 0;			//过程速度积分
@@ -203,7 +203,7 @@ void Location_Tracker_Capture_Goal(int32_t goal_location)
 		/******************** 速度小于刹停速度********************/
 		if((location_tck.course_speed >= -location_tck.speed_locking_stop) && (location_tck.course_speed <= location_tck.speed_locking_stop))
 		{
-			//进入静止->取整浮点数据
+			//进入静止->取整浮点数据（当到达目标位置后但速度不为零时，在允许直接刹停的速度内可以直接强制刹停）
 			location_tck.course_acc_integral = 0;
 			location_tck.course_speed = 0;
 			location_tck.course_speed_integral = 0;
@@ -211,7 +211,7 @@ void Location_Tracker_Capture_Goal(int32_t goal_location)
 		/********************速度 > 0********************/
 		else if(location_tck.course_speed > 0)
 		{
-			//正向减速到0
+			//正向减速到0（当正转到达目标位置后但速度不为零时，执行正向减速操作）
 			Speed_Course_Integral(-location_tck.down_acc)
 			if(location_tck.course_speed <= 0)
 			{
@@ -222,7 +222,7 @@ void Location_Tracker_Capture_Goal(int32_t goal_location)
 		/********************速度 < 0********************/
 		else if(location_tck.course_speed < 0)
 		{
-			//反向减速到0
+			//反向减速到0（当反转转到达目标位置后但速度不为零时，执行反向减速操作）
 			Speed_Course_Integral(location_tck.down_acc)
 			if(location_tck.course_speed >= 0)
 			{
@@ -239,10 +239,12 @@ void Location_Tracker_Capture_Goal(int32_t goal_location)
 		{
 			if(location_sub > 0)
 			{
+				//正向加速（当正转未到达目标位置，但速度为零时，执行正向加速操作，来逼近目标位置）
 				Speed_Course_Integral(location_tck.up_acc)	//开始正向加速
 			}
 			else
 			{
+				//反向加速（当反转未到达目标位置，但速度为零时，执行反向加速操作，来逼近目标位置）
 				Speed_Course_Integral(-location_tck.up_acc)	//开始反向加速
 			}
 		}
@@ -251,16 +253,17 @@ void Location_Tracker_Capture_Goal(int32_t goal_location)
 		{
 			if(location_tck.course_speed <= location_tck.max_speed)
 			{
-				//计算需要的减速位移
+				//计算需要的减速位移(有溢出风险的运算)（这里的计算方法根据物理匀变速直线运动位移公式，和速度公式推导得到）
 				int32_t need_down_location = (int32_t)((float)location_tck.course_speed * (float)location_tck.course_speed * (float)location_tck.down_acc_quick);	//浮点运算
 				if(abs(location_sub) > need_down_location)
 				{
-					//正向加速到最大速度
+					//正向加速到最大速度（说明距离目标位置距离很远，可以持续加速，并持续对加速度积分）
 					if(location_tck.course_speed < location_tck.max_speed)
 					{
 						Speed_Course_Integral(location_tck.up_acc);
 						if(location_tck.course_speed >= location_tck.max_speed)
 						{
+							//速度达到最大速度，清除加速度积分
 							location_tck.course_acc_integral = 0;
 							location_tck.course_speed = location_tck.max_speed;
 						}
@@ -280,6 +283,7 @@ void Location_Tracker_Capture_Goal(int32_t goal_location)
 					Speed_Course_Integral(-location_tck.down_acc);
 					if(location_tck.course_speed <= 0)
 					{
+						//速度为零，保持静止，清除加速度积分
 						location_tck.course_acc_integral = 0;
 						location_tck.course_speed = 0;
 					}
@@ -291,6 +295,7 @@ void Location_Tracker_Capture_Goal(int32_t goal_location)
 				Speed_Course_Integral(-location_tck.down_acc);
 				if(location_tck.course_speed <= 0)
 				{
+					//速度为零，保持静止，清除加速度积分
 					location_tck.course_acc_integral = 0;
 					location_tck.course_speed = 0;
 				}
@@ -301,16 +306,17 @@ void Location_Tracker_Capture_Goal(int32_t goal_location)
 		{
 			if(location_tck.course_speed >= -location_tck.max_speed)
 			{
-				//计算需要的减速位移(有溢出风险的运算)
+				//计算需要的减速位移(有溢出风险的运算)（这里的计算方法根据物理匀变速直线运动位移公式，和速度公式推导得到）
 				int32_t need_down_location = (int32_t)((float)location_tck.course_speed * (float)location_tck.course_speed * (float)location_tck.down_acc_quick);	//浮点运算
 				if(abs(location_sub) > need_down_location)
 				{
-					//反向加速到最大速度
+					//反向加速到最大速度（说明距离目标位置距离很远，可以持续加速，并持续对加速度积分）
 					if(location_tck.course_speed > -location_tck.max_speed)
 					{
 						Speed_Course_Integral(-location_tck.up_acc);
 						if(location_tck.course_speed <= -location_tck.max_speed)
 						{
+							//速度达到最大速度，清除加速度积分
 							location_tck.course_acc_integral = 0;
 							location_tck.course_speed = -location_tck.max_speed;
 						}
@@ -353,6 +359,7 @@ void Location_Tracker_Capture_Goal(int32_t goal_location)
 			Speed_Course_Integral(-location_tck.down_acc);
 			if(location_tck.course_speed <= 0)
 			{
+				//速度为零，保持静止，清除加速度积分
 				location_tck.course_acc_integral = 0;
 				location_tck.course_speed = 0;
 			}

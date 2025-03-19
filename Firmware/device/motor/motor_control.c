@@ -157,18 +157,19 @@ void Control_PID_To_Electric(int32_t _speed)
 	pid.v_error = _speed - motor_control.est_speed;	//速度误差
 	if(pid.v_error > ( 1024 * 1024))	pid.v_error = ( 1024 * 1024);
 	if(pid.v_error < (-1024 * 1024))	pid.v_error = (-1024 * 1024);
-	//op输出
+	//op输出（比例项）
 	pid.op = ((pid.kp) * (pid.v_error));
-	//oi输出
+	//oi输出（积分项，速度误差的积分，通过累加实现，
+	//通过右移操作进行衰减，防止积分饱和）
 	pid.i_mut += ((pid.ki) * (pid.v_error));
 	pid.i_dec  = (pid.i_mut >> 10);
 	pid.i_mut -= (pid.i_dec << 10);
 	pid.oi    += (pid.i_dec);
 	if(pid.oi >      (  Current_Rated_Current << 10 ))	pid.oi = (  Current_Rated_Current << 10 );	//限制为额定电流 * 1024
 	else if(pid.oi < (-(Current_Rated_Current << 10)))	pid.oi = (-(Current_Rated_Current << 10));	//限制为额定电流 * 1024
-	//od输出
+	//od输出（微分项，注意将微分项应用于速度误差的差值)
 	pid.od = (pid.kd) * (pid.v_error - pid.v_error_last);
-	//综合输出计算
+	//综合输出计算（同时限制输出范围，限制最终输出电流在额定电流范围内）
 	pid.out = (pid.op + pid.oi + pid.od) >> 10;
 	if(pid.out > 			Current_Rated_Current)		pid.out =  Current_Rated_Current;
 	else if(pid.out < -Current_Rated_Current)		pid.out = -Current_Rated_Current;
@@ -281,9 +282,10 @@ void Control_DCE_To_Electric(int32_t _location, int32_t _speed)
 	if(dce.p_error < (-3200))	dce.p_error = (-3200);
 	if(dce.v_error > ( 4000))	dce.v_error = ( 4000);				//限制速度误差在10r/s内(51200*10/128)
 	if(dce.v_error < (-4000))	dce.v_error = (-4000);
-	//op输出计算
+	//op输出计算（比例项）
 	dce.op     = ((dce.kp) * (dce.p_error));
-	//oi输出计算
+	//oi输出计算（积分项，包括位置误差和速度误差的积分，
+	//通过累加实现，通过右移操作进行衰减，防止积分饱和）
 	dce.i_mut += ((dce.ki) * (dce.p_error));
 	dce.i_mut += ((dce.kv) * (dce.v_error));
 	dce.i_dec  = (dce.i_mut >> 7);
@@ -291,9 +293,12 @@ void Control_DCE_To_Electric(int32_t _location, int32_t _speed)
 	dce.oi    += (dce.i_dec);
 	if(dce.oi >      (  Current_Rated_Current << 10 ))	dce.oi = (  Current_Rated_Current << 10 );	//限制为额定电流 * 1024
 	else if(dce.oi < (-(Current_Rated_Current << 10)))	dce.oi = (-(Current_Rated_Current << 10));	//限制为额定电流 * 1024
-	//od输出计算
+	//od输出计算（微分项，注意将微分项应用于速度误差而不是位置误差，
+	//因为位置对时间的导数就是速度，因此速度误差微分会提供位置误差变化率信息）
+	//速度对时间的导数即为加速度，速度误差微分提供了加速度信息，有助于控制器
+	//对抗突然的负载变化或快速的位置变化
 	dce.od = ((dce.kd) * (dce.v_error));
-	//综合输出计算
+	//综合输出计算（同时限制输出范围，限制最终输出电流在额定电流范围内）
 	dce.out = (dce.op + dce.oi + dce.od) >> 10;
 	if(dce.out > 			Current_Rated_Current)		dce.out =  Current_Rated_Current;
 	else if(dce.out < -Current_Rated_Current)		dce.out = -Current_Rated_Current;
@@ -631,25 +636,27 @@ void Motor_Control_Callback(void)
 	motor_control.real_location_last = motor_control.real_location;
 	motor_control.real_location += sub_data;
 
-    /**
-     * 上方回环检测解答：
-     * A:不应该是大于一整圈脉冲才认为是转过一圈了么，为什么是大于一半的脉冲
-     * B:可以理解为，大于一个很大的值，然后实际转速不可能这么高，所以理解为转过了一圈
-     * B:正转就是小于一个很大的负值
-     * B:这个值习惯性的就填脉冲的一半了
-     * A:采样一次不可能转半圈
-     * B:就是这个意思
-     */
+  /**
+   * 上方回环检测解答：
+   * A:不应该是大于一整圈脉冲才认为是转过一圈了么，为什么是大于一半的脉冲
+   * B:可以理解为，大于一个很大的值，然后实际转速不可能这么高，所以理解为转过了一圈
+   * B:正转就是小于一个很大的负值
+   * B:这个值习惯性的就填脉冲的一半了
+   * A:采样一次不可能转半圈
+   * B:就是这个意思
+   */
 
 	/************************************ 数据估计 ************************************/
 	/************************************ 数据估计 ************************************/
-	//估计速度
+	//估计速度（位置差除以周期时间），将估计速度加 31 倍的原估计速度得到 32 倍的速度，为了提升计算效率把乘以 31 转化为左移 5 表示乘 32，
+	//再减去 1 次原来估计速度来得到 31 倍的原估计速度，这里将估计速度与原估计速度结合起来相当于滤波操作，最后再右移 5 即除以 32。
 	motor_control.est_speed_mut += (	((motor_control.real_location - motor_control.real_location_last) * (CONTROL_FREQ_HZ))
 																	+ ((int32_t)(motor_control.est_speed  << 5) - (int32_t)(motor_control.est_speed))
 																	);
+	//估计速度就是 32 倍融合速度除以 32 平均得到的速度
 	motor_control.est_speed      = (motor_control.est_speed_mut >> 5);																	//(取整)(向0取整)(保留符号位)
 	motor_control.est_speed_mut  = ((motor_control.est_speed_mut) - ((motor_control.est_speed << 5)));	//(取余)(向0取整)(保留符号位)
-	//估计位置
+	//估计位置（实际位置结合超前角补偿得到）在高速运动下编码器由于超前角的影响角度测量可能存在误差，下面根据不同速度来得出超前角
 	motor_control.est_lead_location = Motor_Control_AdvanceCompen(motor_control.est_speed);
 	motor_control.est_location = motor_control.real_location + motor_control.est_lead_location;
 	//估计误差
@@ -707,7 +714,7 @@ void Motor_Control_Callback(void)
 	if(motor_control.mode_run != motor_control.mode_order)
 	{
 		motor_control.mode_run = motor_control.mode_order;
-		motor_control.soft_new_curve = true;
+		motor_control.soft_new_curve = true; /*触发新发生器刷新*/
 	}
 
 #if 0 /*Add by zhbi98*/
@@ -783,13 +790,13 @@ void Motor_Control_Callback(void)
 
 	/************************************ 触发信号发生器新动作 ************************************/
 	/************************************ 触发信号发生器新动作 ************************************/
-	//额外的触发新发生器
+	//额外的触发新发生器刷新
 	if(	 ((motor_control.soft_disable) && (!motor_control.goal_disable))	//失能指令关闭
 		|| ((motor_control.soft_brake)   && (!motor_control.goal_brake))		//刹车指令关闭
 	){
 		motor_control.soft_new_curve = true;
 	}
-	//信号发生器刷新
+	//信号发生器数据刷新，更新过程数据，用于新的计算
 	if(motor_control.soft_new_curve){
 		motor_control.soft_new_curve = false;
 		//控制重载和功率模块唤醒
@@ -969,7 +976,7 @@ void Motor_Control_Clear_Stall(void)
 }
 
 /**
-  * @brief  超前角补偿
+  * @brief  超前角补偿，在高速运动下编码器可能引出超前角误差，下面根据不同速度来得出超前角
   * @param  _speed:补偿速度
   * @retval 补偿角度
 **/

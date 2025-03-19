@@ -123,7 +123,7 @@ void Current_Tracker_Init(void)
 **/
 void Current_Tracker_NewTask(int16_t real_current)
 {
-	//更新计算过程数据
+	//更新计算过程（Course）数据
 	current_tck.course_mut = 0;				//过程电流
 	current_tck.course = real_current;	//过程电流
 }

@@ -124,7 +124,7 @@ void Speed_Tracker_Init(void)
 **/
 void Speed_Tracker_NewTask(int32_t real_speed)
 {
-	//更新计算过程数据
+	//更新计算过程（Course）数据
 	speed_tck.course_mut = 0;		//过程加速度积分
 	speed_tck.course = real_speed;		//过程速度
 }
