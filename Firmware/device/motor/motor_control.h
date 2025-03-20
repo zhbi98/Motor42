@@ -138,6 +138,7 @@ typedef enum{
 	Control_State_Running			= 0x02,	//任务执行中
 	Control_State_Overload		= 0x03,	//过载
 	Control_State_Stall				= 0x04,	//堵转
+	Control_State_Overtemp		= 0x05,	//过热
 }Motor_State;
 
 /**
@@ -214,6 +215,7 @@ typedef struct{
 	//过载识别
 	uint32_t	overload_time_us;	//过载计时器
 	bool			overload_flag;		//过载标志
+	bool			overtemp_flag;		//过热标志
 	//状态
 	Motor_State		state;			//统一的电机状态
 }Motor_Control_Typedef;

@@ -47,6 +47,7 @@
 #include "tb67h450.h"/*#include "hw_elec.h"*/
 /*#include "signal_port.h"*/
 #include "enc_cali.h"
+#include "temp.h"
 
 /*Control*/
 #include "control_config.h"
@@ -669,6 +670,7 @@ void Motor_Control_Callback(void)
 	else if(
 		 (motor_control.stall_flag)			//堵转标志置位
 	|| (motor_control.soft_disable)		//软目标_失能指令
+	|| (motor_control.overtemp_flag)	//过热标志置位
 	|| ((!_angle.rectify_valid))			//编码器校准表无效
 	){
 		Motor_Control_Clear_Integral();		//清除积分
@@ -903,7 +905,12 @@ void Motor_Control_Callback(void)
 		motor_control.overload_time_us = 0;
 		motor_control.overload_flag = false;//过载标志可自清除
 	}
-	
+
+	//过热检测
+	uint16_t overtemp = _overtemp();
+	if (overtemp > 3200) motor_control.overtemp_flag = true;
+	if (overtemp < 3000) motor_control.overtemp_flag = false;
+
 	/************************************ 状态记录 ************************************/
 	/************************************ 状态记录 ************************************/
 	//统一的电机状态
@@ -913,6 +920,8 @@ void Motor_Control_Callback(void)
 		motor_control.state = Control_State_Stall;
 	else if(motor_control.overload_flag)						//过载标志置位
 		motor_control.state = Control_State_Overload;
+	else if (motor_control.overtemp_flag)
+		motor_control.state = Control_State_Overtemp;	//过热标志置位
 	else
 	{
 		if(motor_control.mode_run == Motor_Mode_Digital_Location){
