@@ -8,6 +8,7 @@
  *********************/
 
 #include "mb.h"
+#include "_485_protocol.h"
 #include "log.h"
 
 /*********************
@@ -32,25 +33,39 @@
 
 static uint16_t * const data_p[REG_COUNT] = {
     /*0*/
-    NULL, NULL, NULL, NULL, NULL, 
-    NULL, NULL, NULL, 
+    &_cmd._id, 
+
+    /*1*/
+    &_cmd.val[0], &_cmd.val[1], &_cmd.val[2], 
+    &_cmd.val[3], &_cmd.val[4], &_cmd.val[5], 
+
+    /*7*/
+    &_wri.slaveid, 
 
     /*8*/
-    NULL, NULL, NULL, NULL, 
+    &_req.home[0], &_req.home[1], 
 
-    NULL, NULL, NULL, NULL, 
+    /*10*/
+    &_req.cur[0], &_req.cur[1], 
+
+    /*12*/
+    &_req.vel[0], &_req.vel[1], 
+
+    /*14*/
+    &_req.pos[0], &_req.pos[1],  
 
     /*16*/
-    NULL, NULL, NULL, NULL, NULL, 
-    NULL, NULL, NULL, 
+    NULL, NULL, NULL, NULL, 
 
-    /*24*/
-    NULL, 
+    /*20*/
+    NULL, NULL, NULL, NULL, 
+    NULL, NULL, NULL, NULL, 
 
-    /*25*/
-    NULL, NULL, NULL, NULL, NULL, 
-    NULL, NULL, NULL, NULL, NULL, 
-    NULL, NULL, NULL, NULL, NULL,
+    /*28*/
+    NULL, NULL, NULL, NULL, 
+    NULL, NULL, NULL, NULL, 
+
+    NULL, NULL, NULL, NULL,
 };
 
 static uint16_t register_start_nr = 0xFFFF;
@@ -254,10 +269,9 @@ mb_res_t mb_rtu_write_data(uint8_t * pdu_data_frame_p,
     register_start_nr = index;
     register_end_nr = index + num;
 
-    info("start:%d, end:%d", 
+    /*info("start:%d, end:%d", 
         register_start_nr, 
-        register_end_nr
-    );
+        register_end_nr);*/
 
     return MB_RES_NONE;
 }

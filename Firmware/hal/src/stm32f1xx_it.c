@@ -26,6 +26,7 @@
 #include "can.h"
 #include "tim.h"
 #include "adc.h"
+#include "mbrtu.h"
 
 /** @addtogroup STM32F1xx_HAL_Examples
   * @{
@@ -270,6 +271,19 @@ void CAN1_SCE_IRQHandler(void)
     /* USER CODE END CAN1_SCE_IRQn 1 */
 }
 
+extern uint8_t RevByte;
+
+/**
+ * @brief This function handles USART2 interrupt.
+ */
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+  if (huart->Instance == USART1) 
+  {
+    mb_rtu_recv_bytes(RevByte);
+  }
+}
+
 /**
  * @brief This function handles USART1 interrupt.
  */
@@ -277,6 +291,8 @@ void USART1_IRQHandler(void)
 {
     /* USER CODE BEGIN USART1_IRQn 0 */
     HAL_UART_IRQHandler(&huart1);
+    /**Restart USART interrupts*/
+    HAL_UART_Receive_IT(&huart1, &RevByte, 1);
     /* USER CODE END USART1_IRQn 0 */
 }
 

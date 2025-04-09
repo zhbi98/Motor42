@@ -15,7 +15,8 @@
  *      DEFINES
  *********************/
 
-#define MB_SEND_BYTE(buf, len)
+#define MB_SEND_BYTE(buf, len) HAL_UART_Transmit(&huart1, buf, len, 10)
+#define MB_SEND_EN(en) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, en)
 
 /**********************
  *  STATIC VARIABLES
@@ -125,7 +126,9 @@ bool mb_rtu_set_slave_addr(uint8_t slave_addr)
  */
 void mb_rtu_send_bytes(uint8_t * data_p, uint16_t len)
 {
+    MB_SEND_EN(true);
     MB_SEND_BYTE(data_p, len);
+    MB_SEND_EN(false);
 }
 
 /**

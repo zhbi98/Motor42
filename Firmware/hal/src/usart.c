@@ -72,7 +72,8 @@ void x42_usart1_init()
     }
 
     /* USER CODE BEGIN USART1_Init 2 */
-    __HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
+    /*__HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);*/
+    HAL_UART_Receive_IT(&huart1, &RevByte, 1);
     /* USER CODE END USART1_Init 2 */
 }
 
@@ -111,7 +112,8 @@ void x42_usart2_init()
     }
 
     /* USER CODE BEGIN USART1_Init 2 */
-    __HAL_UART_ENABLE_IT(&huart2, UART_IT_IDLE);
+    /*__HAL_UART_ENABLE_IT(&huart2, UART_IT_IDLE);*/
+    HAL_UART_Receive_IT(&huart2, &RevByte, 1);
     /* USER CODE END USART1_Init 2 */
 }
 

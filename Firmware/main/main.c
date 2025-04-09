@@ -37,6 +37,11 @@
 #include "dma.h"
 #include "setup.h"
 
+#include "_485_protocol.h"
+#include "mbtimer.h"
+#include "mb.h"
+#include "mbrtu.h"
+
 /*********************
  *      DEFINES
  *********************/
@@ -102,9 +107,9 @@ int32_t main()
 
     x42_TIM4_init();
     x42_TIM2_init();
-    x42_TIM1_Init();
-    x42_dma_init();
-    x42_adc1_init();
+    /*x42_TIM1_Init();*/
+    /*x42_dma_init();*/
+    /*x42_adc1_init();*/
 
     multiTimerInstall(tim_task_get_tick);
     multiTimerStart(&_TIM_100Hz, 100, _TIM_callback_100Hz, NULL); /**5 ms repeating*/
@@ -136,6 +141,14 @@ int32_t main()
     dce.ki = _setup.dce_ki;
     dce.kd = _setup.dce_kd;
 
+    /*Initialize the RS485 Bus 
+    corresponding Modbus controller*/
+    mb_rtu_mode_init(42, 115200);
+    _mb_rtu_xcall_register(0x03, 
+        mb_rtu_read_reg_data);
+    _mb_rtu_xcall_register(0x10, 
+        mb_rtu_write_reg_data);
+
     HAL_Delay(100);
     /*Start close loop control tick work*/
     HAL_TIM_Base_Start_IT(&htim2);
@@ -151,6 +164,12 @@ int32_t main()
         /*led_anim_tick_work();*/
         /*btn_doing_tick_work();*/
         file_tick_work();
+        /*Process the protocol fields*/
+        mb_rtu_pdu_field_deal();
+        /*Apply the protocol fields*/
+        dev_rs485_apply();
+        /*Update Modbus register parameters*/
+        dev_rs485_refer();
     }
     return 0;
 }
@@ -205,6 +224,7 @@ static void _TIM_callback_100Hz(MultiTimer * timer, void * userData)
     led_dev_task_handler();
     led_anim_tick_work();
     btn_doing_tick_work();
+    mb_timer_tick_callback();
 
     multiTimerStart(timer, 100, _TIM_callback_100Hz, NULL);
 }
