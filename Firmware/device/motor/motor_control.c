@@ -467,6 +467,14 @@ bool Motor_Control_Write_Goal_Location_WithTime(int32_t pos, float time)
   if ((float)_pos_delta > _pos_max) {
   	/*velocity Limit*/
     Move_Rated_Speed = 30U * Move_Pulse_NUM;
+
+    /**The new rated speed needs to be synchronized to 
+    the position tracker, which needs the rated 
+    speed to generate the process speed.*/
+    Location_Tracker_Set_MaxSpeed(Move_Rated_Speed);
+    Location_Tracker_Set_UpAcc(Move_Rated_Speed);
+    Location_Tracker_Set_DownAcc(Move_Rated_Speed);
+
     Motor_Control_Write_Goal_Location(pos);
     return false;
   } else {
@@ -481,6 +489,14 @@ bool Motor_Control_Write_Goal_Location_WithTime(int32_t pos, float time)
     /*Adjust the rated speed of the motor 
     according to the needs of time*/
     Move_Rated_Speed = (int32_t)speed_max;
+
+    /**The new rated speed needs to be synchronized to 
+    the position tracker, which needs the rated 
+    speed to generate the process speed.*/
+    Location_Tracker_Set_MaxSpeed(Move_Rated_Speed);
+    Location_Tracker_Set_UpAcc(Move_Rated_Speed);
+    Location_Tracker_Set_DownAcc(Move_Rated_Speed);
+
     Motor_Control_Write_Goal_Location(pos);
     return true;
   }

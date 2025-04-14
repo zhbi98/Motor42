@@ -124,6 +124,14 @@ void dev_can_cmd(uint8_t _cmd, uint8_t * _data, uint32_t _len)
         }
         Move_Rated_Speed = (int32_t)(*(float *)(RxData + 4) * \
             (float)Move_Pulse_NUM);
+
+        /**The new rated speed needs to be synchronized to 
+        the position tracker, which needs the rated 
+        speed to generate the process speed.*/
+        Location_Tracker_Set_MaxSpeed(Move_Rated_Speed);
+        Location_Tracker_Set_UpAcc(Move_Rated_Speed);
+        Location_Tracker_Set_DownAcc(Move_Rated_Speed);
+
         Motor_Control_Write_Goal_Location(
             (int32_t)(*(float *)RxData * (float)Move_Pulse_NUM));
         // Always Need Position & Finished ACK
@@ -166,6 +174,9 @@ void dev_can_cmd(uint8_t _cmd, uint8_t * _data, uint32_t _len)
         Move_Rated_UpAcc = (int32_t)_float_val;
         Move_Rated_DownAcc = (int32_t)_float_val;
 
+        /**The new speed acc needs to be synchronized to 
+        the speed tracker, which needs the speed 
+        acc to generate the process acc.*/
         Speed_Tracker_Set_UpAcc((int32_t)_float_val);
         Speed_Tracker_Set_DownAcc((int32_t)_float_val);
         Location_Tracker_Set_UpAcc((int32_t)_float_val);
