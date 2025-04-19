@@ -1,6 +1,78 @@
 ﻿# Motor42
 
-具有多功能接口和闭环功能的步进电机。
+## 简介
+
+如下图，是步进电机驱动器，可以一体化集成安装到 42 步进电机。板上集成磁编码器，具有速度，位置，电流闭环控制功能，解决步进电机高速丢步特性，实现恒定扭矩。支持 RS485+Modbus 和 CAN 总线级联（串联）控制通信，适用于 3D 打印机，舵机，小型机械臂。
+
+![image.png](./Docs/20250419172651.jpg)
+
+## 硬件
+
+PCB 打样使用制造输出文件（Gerber），打样时把所有 Gerber 文件压缩为 .zip 文件提供给 PCB 制造商（例如嘉立创）即可，PCB 经过我打样验证无误，Gerber 文件在 Docs 目录下，可直接使用。
+
+原理图和 PCB 使用开源 EDA 工具 KiCAD 设计的，如果你有 KiCAD 也知道怎么使用，可以自己去导出 Gerber 文件。
+
+PCB 采用 4层板设计，如果要编辑 PCB 需要下载 KiCAD，还需要看些教程熟悉使用方法，当然这个 EDA 工具本身也非常易学。
+
+购买电子元器件按照 Docs 目录下的 BOM 表格购买。
+
+KiCAD 官方下载链接： https://www.kicad.org/
+
+KiCAD 工程目录：[HardWare/kiacd_project](./HardWare/kiacd_project)
+
+制造输出文件（Gerber）目录：[Docs/Motor42-PCB](./Docs/Motor42-PCB/)
+
+器件 BOM 目录：[Docs/Motor42-BOM.csv](Docs/Motor42-BOM.csv)
+
+原理图 PDF 目录： [Docs/Motor42-SCH.csv](Docs/Motor42-SCH.pdf)
+
+## 固件
+
+程序固件使用 CMake 进行构建的，然后用 ARM-GCC 进行编译的，并且可以搭配 VSCode 和 OpenOCD 进行图形化调试，当然你可以新建一个 STM32F103 的 Keil 工程，把程序组织到 Keil 中编译也可以。
+
+使用 CMake 要求会编写 `CMakeLists.txt` 文件，不过我这里已经编写好了，在 Firmware 目录下可以看到。
+
+PCB 上预留了 SWD 调试接口，固件固件就可以使用 SWD 下载。
+
+如果没有 VSCode 的嵌入式开发环境，可以看看这篇文章：[VSCode 和 CMake 搭建嵌入式开发环境](https://blog.csdn.net/jf_52001760/article/details/126826393)
+
+## 安装
+
+驱动器电路板集成安装到 42 步进电机需要结构支撑零件，零件在 Model 目录下。一个为支撑零件，另一个为保护板，把两个 .step 文件 3D 打印即可，零件样式就是简介中图示的样子。
+
+磁编码器检测要在电机轴上安装径向磁铁，磁铁尺寸为 8mmx2mm，磁铁安装注意同心度不要过度偏移，磁铁与编码器的间隙大概为 1.0mm。
+
+Model 支撑零件目录：[Model](./Model)
+
+## 校准
+
+电机第一次使用需要校准，长按两次按键 1 可以启动校准，校准时电机会慢速正转一圈再反转一圈。
+
+## 按键逻辑
+
+按下按键 1 作用是启动停止闭环模式，按下按键 2 的作用是模式参数清 0，例如当前控制模式为速度模式，那么按下按键 2 此时会将速度置为 0，电机随即停止。
+
+## 通信协议
+
+驱动器支持 RS485+Modbus 和 CAN 协议。
+
+### CAN 协议
+
+CAN 协议控制字段划分如下。
+
+![image.png](./Docs/Protocols/Can-Message.jpg)
+
+具体控制指令和控制方式查看 [Docs/Protocols](./Docs/Protocols) 目录下相应的协议文档，这里只截取部分。
+
+![image.png](./Docs/Protocols-CAN-Example.jpg)
+
+### Rs485 协议
+
+具体控制指令和控制方式查看 [Docs/Protocols](./Docs/Protocols) 目录下相应的协议文档，这里只截取部分。
+
+![image.png](./Docs/Protocols-RS485-Example.jpg)
+
+## 问题
 
 注意步进驱动器控制步进电机工作在位置环并要求静止在某个固定位置时可能会出现高频震动的问题。
 
