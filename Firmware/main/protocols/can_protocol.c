@@ -129,8 +129,10 @@ void dev_can_cmd(uint8_t _cmd, uint8_t * _data, uint32_t _len)
         the position tracker, which needs the rated 
         speed to generate the process speed.*/
         Location_Tracker_Set_MaxSpeed(Move_Rated_Speed);
-        Location_Tracker_Set_UpAcc(Move_Rated_Speed);
-        Location_Tracker_Set_DownAcc(Move_Rated_Speed);
+        /**Can not set the acceleration, otherwise the 
+        mode switching speed can not be limited in time.*/
+        /*Location_Tracker_Set_UpAcc(Move_Rated_Speed);*/
+        /*Location_Tracker_Set_DownAcc(Move_Rated_Speed);*/
 
         Motor_Control_Write_Goal_Location(
             (int32_t)(*(float *)RxData * (float)Move_Pulse_NUM));
