@@ -454,17 +454,12 @@ void Motor_Control_Write_PosAsHomeOffset()
 **/
 bool Motor_Control_Write_Goal_Location_WithTime(int32_t pos, float time)
 {
-	float rated_Acc = ((float)Move_Rated_UpAcc + 
-		(float)Move_Rated_DownAcc) / 2.0f;
+	float velAcc = ((float)Move_Rated_UpAcc + (float)Move_Rated_DownAcc) / 2.0f;
+	int32_t deltaPos = abs(pos - motor_control.real_location + Move_Home_Offset);
+	float pMax = (float)velAcc * time * time / 4;
+  float vMax = 0.0f;
 
-	float _pos_max = (float)rated_Acc * time * time / 4;
-
-  float speed_max = 0.0f;
-
-  int32_t _pos_delta = abs(
-  	pos - motor_control.real_location + Move_Home_Offset);
-
-  if ((float)_pos_delta > _pos_max) {
+  if ((float)deltaPos > pMax) {
   	/*velocity Limit*/
     Move_Rated_Speed = 30U * Move_Pulse_NUM;
 
@@ -472,30 +467,32 @@ bool Motor_Control_Write_Goal_Location_WithTime(int32_t pos, float time)
     the position tracker, which needs the rated 
     speed to generate the process speed.*/
     Location_Tracker_Set_MaxSpeed(Move_Rated_Speed);
-    Location_Tracker_Set_UpAcc(Move_Rated_Speed);
-    Location_Tracker_Set_DownAcc(Move_Rated_Speed);
+    /*When updating the speed limit, it is not necessary to 
+    update the acceleration.Once the acceleration is initialized, 
+    it can be fixed and does not need to be updated again.*/
+    /*Location_Tracker_Set_UpAcc(Move_Rated_Speed);*/
+    /*Location_Tracker_Set_DownAcc(Move_Rated_Speed);*/
 
     Motor_Control_Write_Goal_Location(pos);
     return false;
   } else {
-    speed_max = time * (float)rated_Acc;
+    vMax = time * (float)velAcc;
 
-    speed_max -= (float)rated_Acc * (
-    	sqrtf(time * time - 4 * 
-    		(float)_pos_delta / (float)rated_Acc));
+    vMax -= (float)velAcc * (
+    	sqrtf(time * time - 4 * (float)deltaPos / (float)velAcc));
 
-    speed_max /= 2.0f;
+    vMax /= 2.0f;
 
     /*Adjust the rated speed of the motor 
     according to the needs of time*/
-    Move_Rated_Speed = (int32_t)speed_max;
+    Move_Rated_Speed = (int32_t)vMax;
 
-    /**The new rated speed needs to be synchronized to 
-    the position tracker, which needs the rated 
-    speed to generate the process speed.*/
     Location_Tracker_Set_MaxSpeed(Move_Rated_Speed);
-    Location_Tracker_Set_UpAcc(Move_Rated_Speed);
-    Location_Tracker_Set_DownAcc(Move_Rated_Speed);
+    /*When updating the speed limit, it is not necessary to 
+    update the acceleration.Once the acceleration is initialized, 
+    it can be fixed and does not need to be updated again.*/
+    /*Location_Tracker_Set_UpAcc(Move_Rated_Speed);*/
+    /*Location_Tracker_Set_DownAcc(Move_Rated_Speed);*/
 
     Motor_Control_Write_Goal_Location(pos);
     return true;
